@@ -388,6 +388,155 @@ async function delU(t,id){
   try{ok(await db.from(t).delete().eq('id',id));go('adm')}catch(e){alert(e.message)}
 }
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (right after your last </script>) -->
+<style>
+.pw{position:relative;margin:6px 0 12px}
+.pw input{margin:0 !important;padding-right:48px}
+.pwb{position:absolute;top:0;right:0;bottom:0;width:46px;min-height:0 !important;height:auto;padding:0;border:0;background:transparent !important;color:var(--mu);display:grid;place-items:center;transform:none !important;box-shadow:none}
+.pwb:hover{color:var(--tx)}
+</style>
+<script>
+// ===== Added views: Results, Calendar, Tickets, Alerts, Admin =====
+V.res=async function(){
+  const q=db.from('assessment_submissions').select('*,assessments(title,courses(code))');
+  const S=ok(await (isSt()?q.eq('student_id',me.id):q.limit(200)));
+  const N={};
+  if(!isSt()&&S.length){
+    ok(await db.from('students').select('id,full_name,reg_num').in('id',[...new Set(S.map(s=>s.student_id))])).forEach(s=>N[s.id]=s);
+  }
+  const sc=s=>s.score??s.total_score??s.marks, tot=s=>s.total_marks??s.max_score??s.total;
+  v(`<div class="c"><h3>${isSt()?'My results':'Student results'}</h3><div class="ov"><table><tr>${isSt()?'':'<th>Student</th>'}<th>Assessment</th><th>Course</th><th>Score</th><th>Grade</th></tr>${S.map(s=>{
+    const a=s.assessments||{},x=sc(s),t=tot(s),p=t?x/t*100:null;
+    return`<tr>${isSt()?'':`<td>${H((N[s.student_id]||{}).full_name||'—')}</td>`}<td>${H(a.title||'—')}</td><td>${H((a.courses||{}).code||'—')}</td><td>${x??'—'}${t?' / '+t:''}</td><td>${p==null?'—':'<b>'+grade(p)[0]+'</b>'}</td></tr>`}).join('')||'<tr><td colspan="5" class="mu">No results yet.</td></tr>'}</table></div></div>`)
+};
+V.cal=async function(){
+  let E=ok(await db.from('calendar_events').select('*').order('event_date'));
+  if(isSt())E=E.filter(e=>!e.level||e.level==me.level);
+  v(`${canUp()?`<div class="c"><h3>Add event</h3><label>Title</label><input id="ct"><label>Date and time</label><input id="cd" type="datetime-local"><label>For level</label><select id="cl"><option value="">All levels</option>${[100,200,300,400,500].map(x=>`<option>${x}</option>`).join('')}</select><label>Details (optional)</label><input id="cn"><button class="p" onclick="addEv()">Add to calendar</button><div id="cm" class="mu"></div></div>`:''}<div class="c"><h3>Calendar</h3>${E.map(e=>{
+    const past=new Date(e.event_date)<new Date();
+    return`<div class="row" style="${past?'opacity:.55':''}"><div><b>${H(e.title)}</b> ${e.level?`<span class="tag">${e.level}L</span>`:''}<div class="mu">${fd(e.event_date)}${e.description?' · '+H(e.description):''}</div></div>${(e.created_by_id==me.id||isAd())?`<button class="s d" onclick="delEv('${e.id}')">✕</button>`:''}</div>`}).join('')||'<span class="mu">No events yet.</span>'}</div>`)
+};
+V.tk=async function(){
+  const q=db.from('support_tickets').select('*').order('created_at',{ascending:false});
+  const T=ok(await (isAd()?q:q.eq('student_id',me.id)));
+  const RP=T.length?ok(await db.from('ticket_replies').select('*').in('ticket_id',T.map(t=>t.id)).order('created_at')):[];
+  v(`${isSt()?`<div class="c"><h3>Raise a ticket</h3><label>Subject</label><input id="ks"><label>Priority</label><select id="kp"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select><label>Details</label><textarea id="km" rows="3"></textarea><button class="p" onclick="newTk()">Submit ticket</button><div id="kx" class="mu"></div></div>`:''}<div class="c"><h3>${isAd()?'All tickets':'My tickets'}</h3>${T.map(t=>{
+    const closed=t.status=='Closed'||t.status=='Resolved';
+    return`<div class="row" style="align-items:flex-start;flex-direction:column"><div style="width:100%"><span class="tag ${t.priority=='Urgent'?'er':''}">${H(t.priority)}</span> <span class="tag ${closed?'ok':''}">${H(t.status)}</span><br><b>${H(t.subject)}</b>${isAd()?` <span class="mu">· ${H(t.student_name||'')}</span>`:''}<div>${H(t.message)}</div><div class="mu">${fd(t.created_at)}</div>${RP.filter(r=>r.ticket_id==t.id).map(r=>`<div class="mu" style="margin-top:6px"><b>${H(r.author_name)}</b> (${RN[r.author_role]||''}): ${H(r.message)}</div>`).join('')}</div>${t.status!='Closed'?`<div class="r" style="width:100%"><input id="kr_${t.id}" placeholder="Write a reply…" style="margin:6px 0;flex:1"><button class="s" onclick="repTk('${t.id}','${t.student_id}')">Reply</button>${isAd()?`<select style="width:auto;margin:6px 0" onchange="setTk('${t.id}',this.value,'${t.student_id}')">${['Open','In Progress','Resolved','Closed'].map(s=>`<option ${s==t.status?'selected':''}>${s}</option>`).join('')}</select>`:''}</div>`:''}</div>`}).join('')||'<span class="mu">No tickets.</span>'}</div>`)
+};
+V.nf=async function(){
+  const N=await myNotes();
+  localStorage.setItem('seen'+me.id,Date.now());
+  const b=$('#nfb');if(b)b.textContent='';
+  v(`<div class="c"><h3>Alerts</h3>${N.map(n=>`<div class="row"><div><b>${H(n.title||'Notice')}</b><div class="mu">${H(n.message||'')}</div></div><span class="mu">${fd(n.created_at)}</span></div>`).join('')||'<span class="mu">No alerts yet.</span>'}</div>`)
+};
+V.adm=async function(){
+  const cnt=async t=>(await db.from(t).select('*',{count:'exact',head:true})).count||0;
+  const [na,ns,nl,nc]=await Promise.all(['admins','students','lecturers','course_reps'].map(cnt));
+  const get=async(t,r)=>ok(await db.from(t).select('id,full_name,email').order('full_name').limit(100)).map(u=>({...u,t,r}));
+  const U=(await Promise.all([get('students','STUDENT'),get('course_reps','COURSE_REP'),get('lecturers','LECTURER')])).flat();
+  v(`<div class="g"><div class="c"><h3>Students</h3><div class="big">${ns}</div></div><div class="c"><h3>Course reps</h3><div class="big">${nc}</div></div><div class="c"><h3>Lecturers</h3><div class="big">${nl}</div></div><div class="c"><h3>Admins</h3><div class="big">${na}</div></div></div>
+<div class="c"><h3>Send announcement</h3><label>To</label><select id="bw"><option value="">Everyone</option><option value="STUDENT">Students</option><option value="COURSE_REP">Course reps</option><option value="LECTURER">Lecturers</option></select><label>Title</label><input id="bt"><label>Message</label><textarea id="bm" rows="3"></textarea><button class="p" onclick="sendBc()">Send</button><div id="bx" class="mu"></div></div>
+<div class="c"><h3>Users</h3>${U.map(u=>`<div class="row"><div><b>${H(u.full_name)}</b> <span class="tag">${RN[u.r]}</span><div class="mu">${H(u.email||'')}</div></div><button class="s d" onclick="delU('${u.t}','${u.id}')">Remove</button></div>`).join('')||'<span class="mu">No users.</span>'}</div>`)
+};
+// ===== Helper functions for those views =====
+async function addEv(){
+  const t=$('#ct').value.trim(),d=$('#cd').value,m=$('#cm');
+  if(!t||!d){m.textContent='Add a title and date.';return}
+  try{
+    const lv=$('#cl').value;
+    ok(await db.from('calendar_events').insert({title:t,description:$('#cn').value.trim()||null,event_date:new Date(d).toISOString(),level:lv?+lv:null,created_by_id:me.id,created_by_role:me.role}));
+    await notify([{target_role:'STUDENT',title:'New calendar event',message:`${t} · ${fd(d)}`,link_url:'/calendar'}]);
+    go('cal');
+  }catch(e){m.textContent=e.message}
+}
+async function delEv(id){
+  if(!confirm('Delete this event?'))return;
+  try{ok(await db.from('calendar_events').delete().eq('id',id));go('cal')}catch(e){alert(e.message)}
+}
+async function newTk(){
+  const s=$('#ks').value.trim(),m=$('#km').value.trim(),x=$('#kx');
+  if(!s||!m){x.textContent='Add a subject and details.';return}
+  try{
+    ok(await db.from('support_tickets').insert({student_id:me.id,student_name:me.name,subject:s,message:m,priority:$('#kp').value}));
+    await notify([{target_role:'ADMIN',title:'New support ticket',message:`${me.name}: ${s}`,link_url:'/tickets'}]);
+    go('tk');
+  }catch(e){x.textContent=e.message}
+}
+async function repTk(id,sid){
+  const m=$('#kr_'+id).value.trim();if(!m)return;
+  try{
+    ok(await db.from('ticket_replies').insert({ticket_id:id,author_name:me.name,author_role:me.role,message:m}));
+    if(isAd())await notify([{target_user_id:sid,title:'Ticket reply',message:m.slice(0,120),link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+async function setTk(id,st,sid){
+  try{
+    ok(await db.from('support_tickets').update({status:st}).eq('id',id));
+    await notify([{target_user_id:sid,title:'Ticket '+st,message:'Your ticket status is now '+st,link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+async function sendBc(){
+  const r=$('#bw').value,t=$('#bt').value.trim(),m=$('#bm').value.trim(),x=$('#bx');
+  if(!t||!m){x.textContent='Add a title and message.';return}
+  try{
+    const roles=r?[r]:['STUDENT','COURSE_REP','LECTURER','ADMIN'];
+    ok(await notify(roles.map(k=>({target_role:k,title:t,message:m,link_url:'/broadcast'}))));
+    x.textContent='Sent.';$('#bt').value='';$('#bm').value='';
+  }catch(e){x.textContent=e.message}
+}
+async function delU(t,id){
+  if(id==me.id){alert('You cannot remove your own account.');return}
+  if(!confirm('Remove this user permanently?'))return;
+  try{ok(await db.from(t).delete().eq('id',id));go('adm')}catch(e){alert(e.message)}
+}
+
+// ===== Show / hide password (adds an eye button to every password field) =====
+(function(){
+const EYE='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+OFF='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+function wrap(){
+  document.querySelectorAll('input[type=password]:not([data-pw])').forEach(i=>{
+    i.dataset.pw=1;
+    const w=document.createElement('div');w.className='pw';
+    i.parentNode.insertBefore(w,i);w.appendChild(i);
+    const b=document.createElement('button');b.type='button';b.className='pwb';b.setAttribute('aria-label','Show password');b.innerHTML=EYE;
+    b.onclick=()=>{const show=i.type=='password';i.type=show?'text':'password';b.innerHTML=show?OFF:EYE;b.setAttribute('aria-label',show?'Hide password':'Show password')};
+    w.appendChild(b);
+  });
+}
+new MutationObserver(wrap).observe(document.body,{childList:true,subtree:true});
+wrap();
+})();
+
+// ===== Auto logout after inactivity =====
+(function(){
+const IDLE_MIN=10, WARN_SEC=60, LIM=IDLE_MIN*60000;   // change IDLE_MIN to set the timeout
+let last=Date.now(),warned=false,saved=0;
+const store=()=>{saved=last;localStorage.setItem('lastActive',last)};
+const mark=()=>{if(warned||!me)return;last=Date.now();if(last-saved>5000)store()};
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(e=>addEventListener(e,mark,{passive:true,capture:true}));
+window.idleStay=()=>{warned=false;last=Date.now();store();closeM()};
+function expire(){warned=false;closeM();out();msg('You were signed out after '+IDLE_MIN+' minutes of inactivity.','ok')}
+function tick(){
+  if(!me){warned=false;last=Date.now();return}
+  const idle=Date.now()-last;
+  if(idle>=LIM)return expire();
+  if(idle>=LIM-WARN_SEC*1000){
+    const left=Math.ceil((LIM-idle)/1000);
+    if(!warned){warned=true;modal(`<h3>Still there?</h3><p class="mu">For your security you will be signed out in <b id="idc">${left}</b>s because of inactivity.</p><div class="r"><button class="p" onclick="idleStay()">Stay signed in</button><button onclick="closeM();out()">Sign out now</button></div>`)}
+    else{const c=document.getElementById('idc');if(c)c.textContent=left}
+  }
+}
+setInterval(tick,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+document.getElementById('md').addEventListener('click',e=>{if(warned&&e.target.id==='md')idleStay()});
+const la=+localStorage.getItem('lastActive')||0;
+if(me&&la&&Date.now()-la>LIM)expire();
+})();
+</script>
 
 </body>
 </html>
