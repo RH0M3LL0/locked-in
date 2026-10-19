@@ -1899,6 +1899,69 @@ window.parseRes=function(lines,C){
 window.readSheet=readSheet;
 })();
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (after result-sheet-patch and your LAST </script>) -->
+<script>
+// ===== Manage saved results: edit a score, delete one result, delete a whole upload =====
+(function(){
+const chg=d=>{if(!d||!d.length)throw new Error('Nothing was changed. The database may be blocking this (see the SQL policies).')};
+
+// After a staff search for one student, add an edit/delete card under the transcript
+const oldLk=window.lkRes;
+window.lkRes=async function(){
+  await oldLk();
+  const reg=$('#rl').value.replace(/\s+/g,'');
+  if(isSt()||!REG.test(reg))return;
+  try{
+    const R=ok(await db.from('student_results').select('*').eq('reg_num',reg).order('session').order('course_code'));
+    window.MGR=R;
+    const el=document.createElement('div');el.className='c';
+    el.innerHTML='<h3>Edit or delete results</h3>'+(R.map((r,i)=>`<div class="row"><div><b>${H(r.course_code)}</b><div class="mu">${H(r.session)} · ${H(r.semester)}</div></div><div class="r"><input type="number" min="0" max="100" step="0.5" value="${r.score}" id="ms${i}" style="width:84px;margin:0"><button class="s" onclick="editR(${i})">Save</button><button class="s d" onclick="delR(${i})">✕</button></div></div>`).join('')||'<span class="mu">No saved results.</span>');
+    $('#rl2').appendChild(el);
+  }catch(e){}
+};
+
+window.editR=async function(i){
+  const r=window.MGR[i],s=parseFloat($('#ms'+i).value);
+  if(!(s>=0&&s<=100)){alert('Score must be between 0 and 100.');return}
+  try{
+    chg(ok(await db.from('student_results').update({score:s}).eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).select('reg_num')));
+    await lkRes();
+  }catch(e){alert(e.message)}
+};
+
+window.delR=async function(i){
+  const r=window.MGR[i];
+  if(!confirm('Delete '+r.course_code+' ('+r.session+') for '+r.reg_num+'?'))return;
+  try{
+    chg(ok(await db.from('student_results').delete().eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).select('reg_num')));
+    await lkRes();
+  }catch(e){alert(e.message)}
+};
+
+// Staff results page: add a "delete a whole upload" card
+const oldRes=V.res;
+V.res=async function(){
+  await oldRes();
+  if(isSt())return;
+  let keys=[];
+  try{
+    const S=ok(await db.from('student_results').select('session,semester').range(0,9999));
+    keys=[...new Set(S.map(s=>s.session+'|'+s.semester))].sort().reverse();
+  }catch(e){}
+  $('#v').insertAdjacentHTML('beforeend',`<div class="c"><h3>Delete a whole upload</h3><p class="mu">Removes every saved result for one session and semester. This cannot be undone.</p><select id="bd">${keys.map(k=>`<option value="${H(k)}">${H(k.replace('|',' · '))}</option>`).join('')||'<option value="">Nothing saved yet</option>'}</select><button class="d" onclick="delBatch()">Delete this upload</button><div id="bdx" class="mu" style="margin-top:8px"></div></div>`);
+};
+
+window.delBatch=async function(){
+  const val=$('#bd').value,x=$('#bdx');if(!val)return;
+  const [ses,sem]=val.split('|');
+  if(!confirm('Delete ALL results for '+sem+' semester '+ses+'?'))return;
+  try{
+    const d=ok(await db.from('student_results').delete().eq('session',ses).eq('semester',sem).select('reg_num'));
+    chg(d);x.textContent='Deleted '+d.length+' results.';setTimeout(()=>go('res'),900);
+  }catch(e){x.textContent=e.message}
+};
+})();
+</script>
 
 </body>
 </html>
