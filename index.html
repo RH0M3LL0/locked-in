@@ -1753,5 +1753,13 @@ if(me&&la&&Date.now()-la>LIM)expire();
 })();
 </script>
 
+<script>
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
+const { data, error } = await supabase.functions.invoke('RSCE', {
+  body: { name: 'Functions' },
+})
+</script>
 </body>
 </html>
