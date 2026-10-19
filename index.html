@@ -2496,6 +2496,416 @@ const la=+localStorage.getItem('lastActive')||0;
 if(me&&la&&Date.now()-la>LIM)expire();
 })();
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (right after your last </script>) -->
+<style>
+.pw{position:relative;margin:6px 0 12px}
+.pw input{margin:0 !important;padding-right:48px}
+.pwb{position:absolute;top:0;right:0;bottom:0;width:46px;min-height:0 !important;height:auto;padding:0;border:0;background:transparent !important;color:var(--mu);display:grid;place-items:center;transform:none !important;box-shadow:none}
+.pwb:hover{color:var(--tx)}
+</style>
+<script>
+// ===== Added views: Results, Calendar, Tickets, Alerts, Admin =====
+V.res=async function(){
+  const C={};ok(await db.from('courses').select('code,title,credit_units')).forEach(c=>C[c.code]=c);
+  window.CRS=C;
+  if(isSt()){v(transcript(ok(await db.from('student_results').select('*').eq('reg_num',me.reg)),C));return}
+  const y=new Date().getFullYear(),sess=[0,1,2,3,4,5].map(i=>`<option>${y-i}/${y-i+1}</option>`).join('');
+  v(`<div class="c"><h3>Upload results</h3><p class="mu">Upload a <b>PDF, Word (.docx), Excel (.xlsx) or CSV</b> result sheet, or paste rows. It can list one course per row (<b>reg number, course code, score</b>) or one row per student with a column for each course. Only courses in your course list are read, and nothing is saved until you check the preview.</p><div class="g"><div><label>Session</label><select id="rs">${sess}</select></div><div><label>Semester</label><select id="rm"><option>First</option><option>Second</option></select></div></div><label>Result file</label><input id="rf" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt" onchange="rdFile(this)"><label>Or paste rows</label><textarea id="rt" rows="6" placeholder="2023/259021,CSC 301,68"></textarea><button class="p" onclick="prevRes()">Preview</button><div id="rv" style="margin-top:12px"></div></div><div class="c"><h3>Find a student</h3><label>Registration number or name</label><input id="rl" placeholder="2023/259021 or part of a name"><button onclick="lkRes()">Search</button></div><div id="rl2"></div>`);
+};
+
+V.cal=async function(){
+  let E=ok(await db.from('calendar_events').select('*').order('event_date'));
+  if(isSt())E=E.filter(e=>!e.level||e.level==me.level);
+  v(`${canUp()?`<div class="c"><h3>Add event</h3><label>Title</label><input id="ct"><label>Type</label><select id="ce"><option>EVENT</option><option>EXAM</option><option>TEST</option><option>DEADLINE</option><option>LECTURE</option></select><label>Date and time</label><input id="cd" type="datetime-local"><label>For level</label><select id="cl"><option value="">All levels</option>${[100,200,300,400,500].map(x=>`<option>${x}</option>`).join('')}</select><label>Details (optional)</label><input id="cn"><button class="p" onclick="addEv()">Add to calendar</button><div id="cm" class="mu"></div></div>`:''}<div class="c"><h3>Calendar</h3>${E.map(e=>{
+    const past=new Date(e.event_date)<new Date();
+    return`<div class="row" style="${past?'opacity:.55':''}"><div><b>${H(e.title)}</b> <span class="tag">${H(e.event_type||"")}</span> ${e.level?`<span class="tag">${e.level}L</span>`:''}<div class="mu">${fd(e.event_date)}${e.description?' · '+H(e.description):''}</div></div>${(e.created_by_id==me.id||isAd())?`<button class="s d" onclick="delEv('${e.id}')">✕</button>`:''}</div>`}).join('')||'<span class="mu">No events yet.</span>'}</div>`)
+};
+V.tk=async function(){
+  const q=db.from('support_tickets').select('*').order('created_at',{ascending:false});
+  const T=ok(await (isAd()?q:q.eq('student_id',me.id)));
+  const RP=T.length?ok(await db.from('ticket_replies').select('*').in('ticket_id',T.map(t=>t.id)).order('created_at')):[];
+  const N={};
+  if(isAd()&&T.length)ok(await db.from('students').select('id,full_name,reg_num').in('id',[...new Set(T.map(t=>t.student_id))])).forEach(s=>N[s.id]=s);
+  T.forEach(t=>{const s=N[t.student_id]||{};t.student_name=s.full_name||'';t.reg=s.reg_num||''});
+  window.TKS=T;window.TKR=RP;
+  v(`${isSt()?`<div class="c"><h3>✨ Ask the AI first</h3><p class="mu">Describe your problem. The AI can answer simple questions and help you write a clear ticket.</p><textarea id="ka" rows="3" placeholder="e.g. My CSC 301 result is missing"></textarea><button class="p" onclick="askTk()">Get help</button><div id="kao" class="mu"></div></div><div class="c"><h3>Raise a ticket</h3><label>Subject</label><input id="ks"><label>Category</label><select id="kc"><option>General</option><option>Results</option><option>Account</option><option>Materials</option><option>Other</option></select><label>Priority</label><select id="kp"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select><label>Details</label><textarea id="km" rows="3"></textarea><button class="p" onclick="newTk()">Submit ticket</button><div id="kx" class="mu"></div></div>`:''}<div class="c"><h3>${isAd()?'All tickets':'My tickets'}</h3>${T.map(t=>{
+    const done=t.status=='CLOSED'||t.status=='RESOLVED';
+    return`<div class="row" style="align-items:flex-start;flex-direction:column"><div style="width:100%"><span class="tag ${t.priority=='URGENT'?'er':''}">${H(t.priority)}</span> <span class="tag ${done?'ok':''}">${TSL[t.status]||H(t.status)}</span> <span class="tag">${H(t.ticket_code)}</span><br><b>${H(t.subject)}</b>${isAd()?` <span class="mu">· ${H(t.student_name)} ${H(t.reg)}</span>`:''}<div>${H(t.description)}</div><div class="mu">${H(t.category)} · ${fd(t.created_at)}</div>${RP.filter(r=>r.ticket_id==t.id).map(r=>`<div class="mu" style="margin-top:6px"><b>${RN[r.sender_type]||H(r.sender_type)}</b>: ${H(r.message)}</div>`).join('')}</div>${t.status!='CLOSED'?`<div class="r" style="width:100%"><input id="kr_${t.id}" placeholder="Write a reply…" style="margin:6px 0;flex:1"><button class="s" onclick="repTk('${t.id}','${t.student_id}')">Reply</button>${isAd()?`<button class="s" onclick="aiRep('${t.id}')">✨ Suggest reply</button><select style="width:auto;margin:6px 0" onchange="setTk('${t.id}',this.value,'${t.student_id}')">${Object.keys(TSL).map(k=>`<option value="${k}" ${k==t.status?'selected':''}>${TSL[k]}</option>`).join('')}</select>`:''}</div>`:''}</div>`}).join('')||'<span class="mu">No tickets.</span>'}</div>`)
+};
+
+V.nf=async function(){
+  const N=await myNotes();
+  localStorage.setItem('seen'+me.id,Date.now());
+  const b=$('#nfb');if(b)b.textContent='';
+  v(`<div class="c"><h3>Alerts</h3>${N.map(n=>`<div class="row"><div><b>${H(n.title||'Notice')}</b><div class="mu">${H(n.message||'')}</div></div><span class="mu">${fd(n.created_at)}</span></div>`).join('')||'<span class="mu">No alerts yet.</span>'}</div>`)
+};
+V.adm=async function(){
+  const cnt=async t=>(await db.from(t).select('*',{count:'exact',head:true})).count||0;
+  const [na,ns,nl,nc]=await Promise.all(['admins','students','lecturers','course_reps'].map(cnt));
+  const get=async(t,r)=>ok(await db.from(t).select('id,full_name,email').order('full_name').limit(100)).map(u=>({...u,t,r}));
+  const U=(await Promise.all([get('students','STUDENT'),get('course_reps','COURSE_REP'),get('lecturers','LECTURER')])).flat();
+  v(`<div class="g"><div class="c"><h3>Students</h3><div class="big">${ns}</div></div><div class="c"><h3>Course reps</h3><div class="big">${nc}</div></div><div class="c"><h3>Lecturers</h3><div class="big">${nl}</div></div><div class="c"><h3>Admins</h3><div class="big">${na}</div></div></div>
+<div class="c"><h3>Send announcement</h3><label>To</label><select id="bw"><option value="">Everyone</option><option value="STUDENT">Students</option><option value="COURSE_REP">Course reps</option><option value="LECTURER">Lecturers</option></select><label>Title</label><input id="bt"><label>Message</label><textarea id="bm" rows="3"></textarea><button class="p" onclick="sendBc()">Send</button><div id="bx" class="mu"></div></div>
+<div class="c"><h3>Users</h3>${U.map(u=>`<div class="row"><div><b>${H(u.full_name)}</b> <span class="tag">${RN[u.r]}</span><div class="mu">${H(u.email||'')}</div></div><button class="s d" onclick="delU('${u.t}','${u.id}')">Remove</button></div>`).join('')||'<span class="mu">No users.</span>'}</div>`)
+};
+// ===== Helper functions for those views =====
+async function addEv(){
+  const t=$('#ct').value.trim(),d=$('#cd').value,m=$('#cm');
+  if(!t||!d){m.textContent='Add a title and date.';return}
+  try{
+    const lv=$('#cl').value;
+    ok(await db.from('calendar_events').insert({title:t,description:$('#cn').value.trim()||null,event_date:new Date(d).toISOString(),level:lv?+lv:null,created_by_id:me.id,created_by_type:me.role,event_type:$('#ce').value}));
+    await notify([{target_role:'STUDENT',title:'New calendar event',message:`${t} · ${fd(d)}`,link_url:'/calendar'}]);
+    go('cal');
+  }catch(e){m.textContent=e.message}
+}
+async function delEv(id){
+  if(!confirm('Delete this event?'))return;
+  try{ok(await db.from('calendar_events').delete().eq('id',id));go('cal')}catch(e){alert(e.message)}
+}
+async function sendBc(){
+  const r=$('#bw').value,t=$('#bt').value.trim(),m=$('#bm').value.trim(),x=$('#bx');
+  if(!t||!m){x.textContent='Add a title and message.';return}
+  try{
+    const roles=r?[r]:['STUDENT','COURSE_REP','LECTURER','ADMIN'];
+    ok(await notify(roles.map(k=>({target_role:k,title:t,message:m,link_url:'/broadcast'}))));
+    x.textContent='Sent.';$('#bt').value='';$('#bm').value='';
+  }catch(e){x.textContent=e.message}
+}
+async function delU(t,id){
+  if(id==me.id){alert('You cannot remove your own account.');return}
+  if(!confirm('Remove this user permanently?'))return;
+  try{ok(await db.from(t).delete().eq('id',id));go('adm')}catch(e){alert(e.message)}
+}
+
+// ===== Results, GPA and CGPA =====
+if(!NAV.ADMIN.includes('res'))NAV.ADMIN.splice(3,0,'res');
+function transcript(R,C){
+  if(!R.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
+  const stamp=r=>r.session+(r.created_at||''),best={};
+  R.forEach(r=>{const o=best[r.course_code];if(!o||stamp(r)>stamp(o))best[r.course_code]=r});
+  const calc=rows=>{let u=0,p=0;rows.forEach(r=>{const c=C[r.course_code];if(!c||c.credit_units==null)return;u+=+c.credit_units;p+=+c.credit_units*grade(+r.score)[1]});return{u,g:u?p/u:0}};
+  const all=calc(Object.values(best)),G={};
+  R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
+  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · retaken courses use the latest result</div></div>`+Object.keys(G).sort().map(k=>{
+    const rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code)),t=calc(rows),[ses,sm]=k.split('|');
+    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0];return`<tr><td>${H(r.course_code)}</td><td>${H(c.title||'—')}</td><td>${c.credit_units??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
+}
+const LJ={};
+function loadJs(u){return LJ[u]||(LJ[u]=new Promise((res,rej)=>{const e=document.createElement('script');e.src=u;e.onload=res;e.onerror=()=>{delete LJ[u];rej(new Error('Could not load a helper library. Check your internet connection.'))};document.head.appendChild(e)}))}
+async function pdfLines(buf){
+  const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  await loadJs(B+'pdf.min.js');const lib=window.pdfjsLib;
+  if(!lib.GlobalWorkerOptions.workerSrc){
+    try{const t=await(await fetch(B+'pdf.worker.min.js')).text();lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}))}catch(e){lib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js'}
+  }
+  const pdf=await lib.getDocument({data:new Uint8Array(buf)}).promise,out=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await(await pdf.getPage(p)).getTextContent();
+    const its=tc.items.filter(i=>i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:i.transform[5]})).sort((a,b)=>b.y-a.y||a.x-b.x);
+    let cur=[],cy=null;const flush=()=>{if(cur.length)out.push(cur.sort((a,b)=>a.x-b.x).map(i=>i.s).join('\t'));cur=[]};
+    its.forEach(i=>{if(cy===null||Math.abs(i.y-cy)>3){flush();cy=i.y}cur.push(i)});flush();
+  }
+  return out;
+}
+async function docxLines(buf){
+  await loadJs('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+  const h=(await mammoth.convertToHtml({arrayBuffer:buf})).value,d=new DOMParser().parseFromString(h,'text/html'),out=[];
+  d.body.childNodes.forEach(n=>{
+    if(n.nodeName=='TABLE')n.querySelectorAll('tr').forEach(tr=>out.push([...tr.children].map(c=>c.textContent.trim()).join('\t')));
+    else if(n.textContent.trim())out.push(n.textContent.trim());
+  });
+  return out;
+}
+async function xlsxLines(buf){
+  await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  const wb=XLSX.read(buf,{type:'array'}),out=[];
+  wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_csv(wb.Sheets[n],{FS:'\t'}).split(/\r?\n/).forEach(l=>out.push(l)));
+  return out;
+}
+async function rdFile(i){
+  const f=i.files[0],x=$('#rv');if(!f)return;
+  x.innerHTML='<span class="mu">Reading '+H(f.name)+'…</span>';
+  try{
+    const ext=(f.name.split('.').pop()||'').toLowerCase();let lines;
+    if(ext=='pdf')lines=await pdfLines(await f.arrayBuffer());
+    else if(ext=='docx')lines=await docxLines(await f.arrayBuffer());
+    else if(ext=='xlsx')lines=await xlsxLines(await f.arrayBuffer());
+    else if(ext=='csv'||ext=='txt')lines=(await f.text()).replace(/[,;]/g,'\t').split(/\r?\n/);
+    else{x.innerHTML='<span style="color:var(--er)">Use a PDF, DOCX, XLSX or CSV file.</span>';return}
+    if(!lines.some(l=>String(l).trim())){x.innerHTML='<span style="color:var(--er)">No readable text found. If this PDF is a scanned picture, export the results as Excel or Word instead.</span>';return}
+    $('#rt').value=lines.join('\n');prevRes();
+  }catch(e){x.innerHTML='<span style="color:var(--er)">'+H(e.message)+'</span>'}
+}
+function parseRes(lines,C){
+  const codeRe=/\b([A-Za-z]{3})\s*(\d{3}[A-Za-z]?)\b/g,regRe=/\b(\d{4})\s?\/\s?(\d{6})\b/,numRe=/\b\d{1,3}(?:\.\d+)?\b/g;
+  let cols=[];const rows=[],issues=[];
+  const add=(reg,c,n)=>{const sc=parseFloat(n);if(sc>=0&&sc<=100)rows.push({reg_num:reg,course_code:c,score:sc});else issues.push(reg+' '+c+': score '+n+' is not between 0 and 100')};
+  lines.forEach((ln,i)=>{
+    const t=String(ln).replace(/\s+/g,' ').trim();if(!t)return;
+    const codes=[];let m;codeRe.lastIndex=0;
+    while((m=codeRe.exec(t))){const c=(m[1]+' '+m[2]).toUpperCase();if(C[c])codes.push({c,i:m.index,e:m.index+m[0].length})}
+    const rm=regRe.exec(t);
+    if(!rm){if(codes.length>=2)cols=codes.map(x=>x.c);return}
+    const reg=rm[1]+'/'+rm[2];
+    if(codes.length){
+      codes.forEach((x,k)=>{const seg=t.slice(x.e,k+1<codes.length?codes[k+1].i:t.length),n=seg.match(numRe);if(n)add(reg,x.c,n[0]);else issues.push(reg+' '+x.c+': no score found')});
+    }else if(cols.length){
+      const nums=t.slice(rm.index+rm[0].length).match(numRe)||[];
+      if(nums.length<cols.length){issues.push(reg+': found '+nums.length+' scores for '+cols.length+' courses, skipped');return}
+      cols.forEach((c,k)=>add(reg,c,nums[k]));
+    }else issues.push('Line '+(i+1)+': no known course code');
+  });
+  const M=new Map();rows.forEach(r=>M.set(r.reg_num+'|'+r.course_code,r));
+  return{rows:[...M.values()],issues};
+}
+async function prevRes(){
+  const x=$('#rv'),{rows,issues}=parseRes($('#rt').value.split(/\r?\n/).map(l=>l.replace(/[,;]/g,'\t')),window.CRS);
+  window.RES_ROWS=rows;
+  if(!rows.length){x.innerHTML='<span style="color:var(--er)">No results found. Make sure each row has a reg number like 2023/259021 and course codes that exist in your course list.</span>'+(issues.length?'<div class="mu">'+issues.slice(0,5).map(H).join('<br>')+'</div>':'');return}
+  const regs=[...new Set(rows.map(r=>r.reg_num))],N={};
+  try{for(let i=0;i<regs.length;i+=150)ok(await db.from('students').select('reg_num,full_name').in('reg_num',regs.slice(i,i+150))).forEach(s=>N[s.reg_num]=s.full_name)}catch(e){}
+  const miss=regs.filter(r=>!N[r]);
+  x.innerHTML=`<div class="r" style="margin-bottom:8px"><span class="tag ok">${rows.length} results</span><span class="tag">${regs.length} students</span>${miss.length?`<span class="tag er">${miss.length} not registered on the portal</span>`:''}${issues.length?`<span class="tag er">${issues.length} skipped</span>`:''}</div><div class="ov"><table><tr><th>Reg no.</th><th>Name</th><th>Course</th><th>Score</th></tr>${rows.slice(0,40).map(r=>`<tr><td>${H(r.reg_num)}</td><td>${N[r.reg_num]?H(N[r.reg_num]):'<span class="tag er">not registered</span>'}</td><td>${H(r.course_code)}</td><td>${r.score}</td></tr>`).join('')}</table></div>${rows.length>40?`<p class="mu">Showing 40 of ${rows.length} rows.</p>`:''}${issues.length?`<div class="mu" style="margin-top:8px">${issues.slice(0,5).map(H).join('<br>')}</div>`:''}<button class="p" style="margin-top:10px" onclick="saveRes()">Save ${rows.length} results</button><div id="rx" class="mu" style="margin-top:8px"></div>`;
+}
+async function saveRes(){
+  const x=$('#rx'),ses=$('#rs').value,sem=$('#rm').value,U=(window.RES_ROWS||[]).map(r=>({...r,session:ses,semester:sem}));
+  if(!U.length)return;x.textContent='Saving…';
+  try{
+    for(let i=0;i<U.length;i+=300)ok(await db.from('student_results').upsert(U.slice(i,i+300),{onConflict:'reg_num,course_code,session'}));
+    x.innerHTML=`<span style="color:var(--gr)">Saved ${U.length} results for ${sem} semester ${ses}.</span>`;
+    notify([{target_role:'STUDENT',title:'Results uploaded',message:`${sem} semester ${ses} results are available.`,link_url:'/results'}]);
+  }catch(e){x.textContent=e.message}
+}
+async function lkRes(){
+  const q=$('#rl').value.trim(),o=$('#rl2');
+  if(!q)return;
+  const reg=q.replace(/\s+/g,'');
+  try{
+    if(REG.test(reg)){
+      const[R,S]=await Promise.all([db.from('student_results').select('*').eq('reg_num',reg).then(ok),db.from('students').select('full_name,level').eq('reg_num',reg).limit(1).then(ok)]);
+      const st=S[0];
+      o.innerHTML=`<div class="c"><h3>${st?H(st.full_name):'Not registered on the portal'}</h3><div class="mu">${H(reg)}${st?' · Level '+(st.level||'—'):''}</div></div>`+transcript(R,window.CRS);
+    }else{
+      if(!/^[\w\s\/.\-]+$/.test(q)){o.innerHTML='<div class="c mu">Use letters, numbers or a reg number.</div>';return}
+      const S=ok(await db.from('students').select('reg_num,full_name,level').or(`reg_num.ilike.%${q}%,full_name.ilike.%${q}%`).order('full_name').limit(15));
+      o.innerHTML=`<div class="c"><h3>Matches</h3>${S.map(s=>`<div class="row"><div><b>${H(s.full_name)}</b><div class="mu">${H(s.reg_num)} · Level ${s.level||'—'}</div></div><button class="s" onclick="$('#rl').value='${H(s.reg_num)}';lkRes()">Results</button></div>`).join('')||'<span class="mu">No students found.</span>'}</div>`;
+    }
+  }catch(e){o.innerHTML=`<div class="c">${H(e.message)}</div>`}
+}
+
+// ===== Materials: "CODE - Title" dropdown, no title box, working upload =====
+V.mat=async function(){
+  const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code,title').order('code').then(ok):[]]);
+  const L=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);
+  v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}<div class="c"><h3>Course materials</h3>${L.map(m=>{const own=m.uploaded_by_id==me.id||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)
+};
+async function upl(){
+  const m=$('#um'),f=$('#mf').files[0],cid=$('#mc').value;
+  if(!cid){m.textContent='Choose a course first.';return}
+  if(!f){m.textContent='Choose a PDF file.';return}
+  if(f.type!='application/pdf'&&!/\.pdf$/i.test(f.name)){m.textContent='PDF files only.';return}
+  if(f.size>20e6){m.textContent='File is over 20 MB.';return}
+  m.textContent='Uploading…';
+  try{
+    const label=$('#mc').selectedOptions[0].textContent,ccode=label.split(' - ')[0].replace(/\W+/g,'');
+    const path=`${ccode}/${Date.now()}_${f.name.replace(/[^\w.\-]+/g,'_')}`;
+    const up=await db.storage.from('materials').upload(path,f,{contentType:'application/pdf'});
+    if(up.error)throw up.error;
+    const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
+    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:me.role};
+    const d=$('#md2').value.trim();if(d)row.description=d;
+    ok(await db.from('course_materials').insert(row));
+    if(row.is_public)await notify([{target_role:'STUDENT',title:'New material',message:`${row.title} (${label})`,link_url:'/materials'}]);
+    go('mat');
+  }catch(e){m.textContent=e.message}
+}
+async function vis(id,pub){
+  try{ok(await db.from('course_materials').update({is_public:pub}).eq('id',id));go('mat')}catch(e){alert(e.message)}
+}
+async function delM(id){
+  if(!confirm('Delete this material?'))return;
+  try{
+    const r=ok(await db.from('course_materials').select('file_url').eq('id',id).limit(1))[0];
+    ok(await db.from('course_materials').delete().eq('id',id));
+    const k=r&&String(r.file_url).split('/materials/')[1];
+    if(k)await db.storage.from('materials').remove([decodeURIComponent(k)]);
+    go('mat');
+  }catch(e){alert(e.message)}
+}
+
+// ===== AI: question generator, drill tests, ticket help (Gemini via the "ai" edge function) =====
+const MTX={},AL='ABCD',AI_FN='ai'; // URL slug of your deployed AI function
+async function callAI(task,p){
+  const r=await db.functions.invoke(AI_FN,{body:{task,...p}});
+  if(r.error)throw new Error('The AI service could not be reached. Check that the "ai" function is deployed.');
+  if(r.data&&r.data.error)throw new Error(r.data.error);
+  return r.data;
+}
+async function matText(id){
+  if(MTX[id])return MTX[id];
+  const m=ok(await db.from('course_materials').select('file_url').eq('id',id).limit(1))[0];
+  const t=(await pdfLines(await(await fetch(m.file_url)).arrayBuffer())).join(' ').replace(/\s+/g,' ').trim();
+  if(t.length<200)throw new Error('This PDF has no readable text (it may be a scanned picture).');
+  return MTX[id]=t.slice(0,40000);
+}
+const qHtml=qs=>qs.map((q,i)=>`<div class="row" style="flex-direction:column;align-items:flex-start"><b>${i+1}. ${H(q.q)}</b>${q.type=='short'?`<div class="mu">Model answer: <span style="color:var(--gr)">${H(q.answer)}</span>${q.marks?' ('+q.marks+' marks)':''}</div>`:q.options.map((o,k)=>`<div style="${k==q.answer?'color:var(--gr)':'color:var(--tx2)'}">${AL[k]}. ${H(o)}${k==q.answer?' ✓':''}</div>`).join('')+`<div class="mu">${H(q.explanation||'')}</div>`}</div>`).join('');
+const qText=qs=>qs.map((q,i)=>`${i+1}. ${q.q}\n`+(q.type=='short'?`   Model answer: ${q.answer}${q.marks?' ('+q.marks+' marks)':''}`:q.options.map((o,k)=>`   ${AL[k]}. ${o}`).join('\n')+`\n   Answer: ${AL[q.answer]}\n   Explanation: ${q.explanation||''}`)).join('\n\n');
+const RAD='style="width:18px;height:18px;margin:0 10px 0 0;flex:none"';
+
+V.exam=async function(){
+  const M=ok(await db.from('course_materials').select('id,title,is_public,courses(code,title)').order('created_at',{ascending:false}));
+  const opt=M.filter(m=>!isSt()||m.is_public).map(m=>`<option value="${m.id}">${H((m.courses||{}).code||'')} - ${H((m.courses||{}).title||'')} · ${H(m.title)}</option>`).join('');
+  if(isSt()){
+    const A=ok(await db.from('drill_attempts').select('*').eq('reg_num',me.reg).order('created_at',{ascending:false}).limit(8));
+    v(`<div class="c"><h3>✨ AI drill test</h3><p class="mu">Pick a course material. The AI writes practice questions from that PDF, scores you at the end and explains every answer. Drill scores are for practice only and do not count towards your results.</p>${opt?`<label>Material</label><select id="dm">${opt}</select><div class="g"><div><label>Questions</label><select id="dn"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div><div><label>Difficulty</label><select id="dd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="startDrill()">Start drill</button>`:'<span class="mu">No materials have been uploaded yet.</span>'}</div><div id="dz"></div><div class="c"><h3>My recent drills</h3>${A.map(a=>`<div class="row"><div><b>${H(a.material_title||'')}</b><div class="mu">${fd(a.created_at)}</div></div><span class="tag ${a.score/a.total>=.5?'ok':'er'}">${a.score}/${a.total}</span></div>`).join('')||'<span class="mu">No drills yet.</span>'}</div>`);
+    return;
+  }
+  const B=ok(await db.from('question_banks').select('*').order('created_at',{ascending:false}).limit(30));
+  window.QB=B;
+  v(`<div class="c"><h3>✨ AI question generator</h3><p class="mu">Questions are written from your course material only. Always review them before using.</p><label>Course material (PDF)</label><select id="qm"><option value="">None (use pasted notes)</option>${opt}</select><label>Or paste notes (used instead of the PDF)</label><textarea id="qn" rows="4"></textarea><div class="g"><div><label>Type</label><select id="qk"><option value="mcq">Multiple choice</option><option value="tf">True / False</option><option value="short">Short answer (theory)</option><option value="mixed">Mixed</option></select></div><div><label>Number of questions</label><input id="qc" type="number" value="10" min="1" max="25"></div><div><label>Difficulty</label><select id="qd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="genQ()">Generate</button></div><div id="qo"></div><div class="c"><h3>Question bank</h3>${B.map(b=>`<div class="row"><div><b>${H(b.title)}</b><div class="mu">${H(b.course_code||'')} · ${(b.questions||[]).length} questions · ${H(b.created_by_name||'')} · ${fd(b.created_at)}</div></div><div class="r"><button class="s" onclick="viewQ('${b.id}')">View</button><button class="s" onclick="cpQ('${b.id}')">Copy</button>${(b.created_by_id==me.id||isAd())?`<button class="s d" onclick="delQ('${b.id}')">✕</button>`:''}</div></div>`).join('')||'<span class="mu">Nothing saved yet.</span>'}</div>`);
+};
+
+async function startDrill(){
+  const z=$('#dz'),id=$('#dm').value;
+  z.innerHTML='<div class="c mu">Reading the PDF and writing questions. This can take up to a minute…</div>';
+  try{
+    const lab=$('#dm').selectedOptions[0].textContent,d=await callAI('quiz',{material:await matText(id),n:+$('#dn').value,kind:'mcq',difficulty:$('#dd').value});
+    if(!d.questions.length)throw new Error('The AI did not return usable questions. Please try again.');
+    window.DRILL={qs:d.questions,lab};
+    z.innerHTML=`<div class="c"><h3>Drill: ${H(lab)}</h3>${d.questions.map((q,i)=>`<div class="row" style="flex-direction:column;align-items:flex-start"><b>${i+1}. ${H(q.q)}</b>${q.options.map((o,k)=>`<label style="display:flex;align-items:center;color:var(--tx);margin:6px 0"><input type="radio" name="dq${i}" value="${k}" ${RAD}>${AL[k]}. ${H(o)}</label>`).join('')}</div>`).join('')}<button class="p" onclick="subDrill()">Submit and see my score</button></div>`;
+    z.scrollIntoView({behavior:'smooth'});
+  }catch(e){z.innerHTML=`<div class="c" style="border-color:var(--er)">${H(e.message)}</div>`}
+}
+async function subDrill(){
+  const D=window.DRILL;let sc=0;
+  const res=D.qs.map((q,i)=>{const s=document.querySelector(`input[name=dq${i}]:checked`),a=s?+s.value:-1;if(a==q.answer)sc++;return{q,a}});
+  const tot=D.qs.length,pct=Math.round(sc/tot*100);
+  $('#dz').innerHTML=`<div class="c"><h3>Your score</h3><div class="big">${sc}/${tot}</div><div class="mu" style="text-align:center">${pct}% · grade ${grade(pct)[0]}</div></div><div class="c"><h3>Review and explanations</h3>${res.map(({q,a},i)=>`<div class="row" style="flex-direction:column;align-items:flex-start"><b>${i+1}. ${H(q.q)}</b><div class="mu">Your answer: <span style="color:${a==q.answer?'var(--gr)':'var(--er)'}">${a<0?'not answered':AL[a]+'. '+H(q.options[a])}</span></div>${a==q.answer?'':`<div class="mu">Correct answer: <span style="color:var(--gr)">${AL[q.answer]}. ${H(q.options[q.answer])}</span></div>`}<div style="font-size:13.5px">${H(q.explanation||'')}</div></div>`).join('')}<button class="p" onclick="go('exam')">Start a new drill</button></div>`;
+  $('#dz').scrollIntoView({behavior:'smooth'});
+  try{ok(await db.from('drill_attempts').insert({reg_num:me.reg,material_title:D.lab,score:sc,total:tot}))}catch(e){}
+}
+
+async function genQ(){
+  const z=$('#qo'),id=$('#qm').value,notes=$('#qn').value.trim();
+  z.innerHTML='<div class="c mu">Writing questions. This can take up to a minute…</div>';
+  try{
+    const txt=notes.length>=100?notes:id?await matText(id):'';
+    if(!txt)throw new Error('Pick a material, or paste a few paragraphs of notes.');
+    const kind=$('#qk').value,d=await callAI('quiz',{material:txt,n:+$('#qc').value||10,kind,difficulty:$('#qd').value});
+    if(!d.questions.length)throw new Error('The AI did not return usable questions. Please try again.');
+    window.GEN={qs:d.questions,kind,diff:$('#qd').value,code:(notes.length<100&&id)?$('#qm').selectedOptions[0].textContent.split(' - ')[0]:''};
+    z.innerHTML=`<div class="c"><h3>Draft questions (${d.questions.length})</h3>${qHtml(d.questions)}<label>Title to save as</label><input id="qt" placeholder="e.g. CSC 301 mid-semester test"><div class="r"><button class="p" onclick="saveQ()">Save to question bank</button><button onclick="copyGen()">Copy as text</button></div><div id="qx" class="mu"></div></div>`;
+    z.scrollIntoView({behavior:'smooth'});
+  }catch(e){z.innerHTML=`<div class="c" style="border-color:var(--er)">${H(e.message)}</div>`}
+}
+async function saveQ(){
+  const t=$('#qt').value.trim(),x=$('#qx'),G=window.GEN;
+  if(!t){x.textContent='Give the set a title.';return}
+  try{ok(await db.from('question_banks').insert({title:t,course_code:G.code||null,kind:G.kind,difficulty:G.diff,questions:G.qs,created_by_id:me.id,created_by_name:me.name,created_by_type:me.role}));go('exam')}catch(e){x.textContent=e.message}
+}
+async function copyText(t,x){try{await navigator.clipboard.writeText(t);if(x)x.textContent='Copied.'}catch(e){if(x)x.textContent='Could not copy on this device.'}}
+const copyGen=()=>copyText(qText(window.GEN.qs),$('#qx'));
+const bank=id=>(window.QB||[]).find(b=>b.id==id);
+function viewQ(id){const b=bank(id);if(!b)return;$('#qo').innerHTML=`<div class="c"><h3>${H(b.title)}</h3>${qHtml(b.questions)}</div>`;$('#qo').scrollIntoView({behavior:'smooth'})}
+function cpQ(id){const b=bank(id);if(b)copyText(qText(b.questions))}
+async function delQ(id){if(!confirm('Delete this question set?'))return;try{ok(await db.from('question_banks').delete().eq('id',id));go('exam')}catch(e){alert(e.message)}}
+
+const TSL={OPEN:'Open',IN_PROGRESS:'In progress',RESOLVED:'Resolved',CLOSED:'Closed'};
+async function newTk(){
+  const sb=$('#ks').value.trim(),m=$('#km').value.trim(),x=$('#kx');
+  if(!sb||!m){x.textContent='Add a subject and details.';return}
+  try{
+    const code='TKT-'+Date.now().toString(36).toUpperCase().slice(-5)+Math.random().toString(36).slice(2,5).toUpperCase();
+    ok(await db.from('support_tickets').insert({ticket_code:code,student_id:me.id,subject:sb,category:$('#kc').value,description:m,priority:$('#kp').value}));
+    await notify([{target_role:'ADMIN',title:'New support ticket',message:`${me.name}: ${sb}`,link_url:'/tickets'}]);
+    go('tk');
+  }catch(e){x.textContent=e.message}
+}
+async function repTk(id,sid){
+  const m=$('#kr_'+id).value.trim();if(!m)return;
+  try{
+    ok(await db.from('ticket_replies').insert({ticket_id:id,sender_type:me.role,sender_id:me.id,message:m}));
+    await notify([isAd()?{target_user_id:sid,title:'Ticket reply',message:m.slice(0,120),link_url:'/ticket/'+id}:{target_role:'ADMIN',title:'Ticket reply',message:`${me.name}: ${m.slice(0,100)}`,link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+async function setTk(id,st,sid){
+  try{
+    ok(await db.from('support_tickets').update({status:st,assigned_to_admin:me.id}).eq('id',id));
+    await notify([{target_user_id:sid,title:'Ticket '+TSL[st].toLowerCase(),message:'Your ticket status is now: '+TSL[st],link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+function useTk(){
+  const t=window.TKD;if(!t)return;
+  $('#ks').value=t.subject||'';$('#km').value=t.message||'';
+  const p=String(t.priority||'').toUpperCase();if(['LOW','MEDIUM','HIGH','URGENT'].includes(p))$('#kp').value=p;
+  $('#ks').scrollIntoView({behavior:'smooth'});
+}
+async function aiRep(id){
+  const t=(window.TKS||[]).find(x=>x.id==id),el=$('#kr_'+id);if(!t||!el)return;
+  el.placeholder='Writing a draft…';
+  try{
+    const d=await callAI('ticket_reply',{ticket:{subject:t.subject,message:t.description,category:t.category,priority:t.priority,status:t.status,student:t.student_name},replies:(window.TKR||[]).filter(r=>r.ticket_id==id).map(r=>({by:RN[r.sender_type]||r.sender_type,text:r.message}))});
+    el.value=d.reply||'';el.placeholder='Write a reply…';
+  }catch(e){el.placeholder=e.message}
+}
+
+async function askTk(){
+  const t=$('#ka').value.trim(),o=$('#kao');
+  if(t.length<10){o.textContent='Describe the issue in a sentence or two.';return}
+  o.textContent='Thinking…';
+  try{
+    const d=await callAI('ticket_help',{text:t});window.TKD=d.ticket||null;
+    o.innerHTML=`<div style="margin:8px 0;color:var(--tx)">${H(d.answer||'')}</div>${d.ticket?'<button class="s p" onclick="useTk()">Use this for my ticket</button>':''}`;
+  }catch(e){o.textContent=e.message}
+}
+
+// ===== Show / hide password (adds an eye button to every password field) =====
+(function(){
+const EYE='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+OFF='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+function wrap(){
+  document.querySelectorAll('input[type=password]:not([data-pw])').forEach(i=>{
+    i.dataset.pw=1;
+    const w=document.createElement('div');w.className='pw';
+    i.parentNode.insertBefore(w,i);w.appendChild(i);
+    const b=document.createElement('button');b.type='button';b.className='pwb';b.setAttribute('aria-label','Show password');b.innerHTML=EYE;
+    b.onclick=()=>{const show=i.type=='password';i.type=show?'text':'password';b.innerHTML=show?OFF:EYE;b.setAttribute('aria-label',show?'Hide password':'Show password')};
+    w.appendChild(b);
+  });
+}
+new MutationObserver(wrap).observe(document.body,{childList:true,subtree:true});
+wrap();
+})();
+
+// ===== Auto logout after inactivity =====
+(function(){
+const IDLE_MIN=10, WARN_SEC=60, LIM=IDLE_MIN*60000;   // change IDLE_MIN to set the timeout
+let last=Date.now(),warned=false,saved=0;
+const store=()=>{saved=last;localStorage.setItem('lastActive',last)};
+const mark=()=>{if(warned||!me)return;last=Date.now();if(last-saved>5000)store()};
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(e=>addEventListener(e,mark,{passive:true,capture:true}));
+window.idleStay=()=>{warned=false;last=Date.now();store();closeM()};
+function expire(){warned=false;closeM();out();msg('You were signed out after '+IDLE_MIN+' minutes of inactivity.','ok')}
+function tick(){
+  if(!me){warned=false;last=Date.now();return}
+  const idle=Date.now()-last;
+  if(idle>=LIM)return expire();
+  if(idle>=LIM-WARN_SEC*1000){
+    const left=Math.ceil((LIM-idle)/1000);
+    if(!warned){warned=true;modal(`<h3>Still there?</h3><p class="mu">For your security you will be signed out in <b id="idc">${left}</b>s because of inactivity.</p><div class="r"><button class="p" onclick="idleStay()">Stay signed in</button><button onclick="closeM();out()">Sign out now</button></div>`)}
+    else{const c=document.getElementById('idc');if(c)c.textContent=left}
+  }
+}
+setInterval(tick,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+document.getElementById('md').addEventListener('click',e=>{if(warned&&e.target.id==='md')idleStay()});
+const la=+localStorage.getItem('lastActive')||0;
+if(me&&la&&Date.now()-la>LIM)expire();
+})();
+</script>
 
 </body>
 </html>
