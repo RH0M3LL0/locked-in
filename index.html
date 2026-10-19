@@ -2069,6 +2069,23 @@ window.matGen=async function(id){
 };
 })();
 </script>
+<!-- PASTE just before </body> (after your last </script>). Shows the REAL reason the AI call fails. -->
+<script>
+window.callAI=async function(task,p){
+  const r=await db.functions.invoke('ai',{body:{task,...p}});
+  if(r.error){
+    let d=r.error.message||'Request failed';
+    try{
+      const c=r.error.context;
+      if(c&&c.status)d+=' (HTTP '+c.status+')';
+      if(c&&c.json){const b=await c.json();d+=': '+(b.error||b.message||JSON.stringify(b))}
+    }catch(e){}
+    throw new Error(d);
+  }
+  if(r.data&&r.data.error)throw new Error(r.data.error);
+  return r.data;
+};
+</script>
 
 </body>
 </html>
