@@ -537,6 +537,191 @@ const la=+localStorage.getItem('lastActive')||0;
 if(me&&la&&Date.now()-la>LIM)expire();
 })();
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (right after your last </script>) -->
+<style>
+.pw{position:relative;margin:6px 0 12px}
+.pw input{margin:0 !important;padding-right:48px}
+.pwb{position:absolute;top:0;right:0;bottom:0;width:46px;min-height:0 !important;height:auto;padding:0;border:0;background:transparent !important;color:var(--mu);display:grid;place-items:center;transform:none !important;box-shadow:none}
+.pwb:hover{color:var(--tx)}
+</style>
+<script>
+// ===== Added views: Results, Calendar, Tickets, Alerts, Admin =====
+V.res=async function(){
+  const C={};ok(await db.from('courses').select('code,title,credit_units')).forEach(c=>C[c.code]=c);
+  window.CRS=C;
+  if(isSt()){v(transcript(ok(await db.from('student_results').select('*').eq('reg_num',me.reg)),C));return}
+  const y=new Date().getFullYear(),sess=[0,1,2,3,4,5].map(i=>`<option>${y-i}/${y-i+1}</option>`).join('');
+  v(`<div class="c"><h3>Upload results</h3><p class="mu">One row per student per course: <b>reg number, course code, score</b> (out of 100). Choose a CSV file or paste rows. From Excel: File, Save as CSV.</p><div class="g"><div><label>Session</label><select id="rs">${sess}</select></div><div><label>Semester</label><select id="rm"><option>First</option><option>Second</option></select></div></div><label>CSV file</label><input id="rf" type="file" accept=".csv,.txt" onchange="rdCsv(this)"><label>Or paste rows</label><textarea id="rt" rows="6" placeholder="2023/259021,CSC 301,68"></textarea><button class="p" onclick="upRes()">Upload results</button><div id="rx" class="mu" style="margin-top:8px"></div></div><div class="c"><h3>Look up a student</h3><label>Registration number</label><input id="rl" placeholder="2023/259021"><button onclick="lkRes()">Show transcript</button></div><div id="rl2"></div>`);
+};
+
+V.cal=async function(){
+  let E=ok(await db.from('calendar_events').select('*').order('event_date'));
+  if(isSt())E=E.filter(e=>!e.level||e.level==me.level);
+  v(`${canUp()?`<div class="c"><h3>Add event</h3><label>Title</label><input id="ct"><label>Date and time</label><input id="cd" type="datetime-local"><label>For level</label><select id="cl"><option value="">All levels</option>${[100,200,300,400,500].map(x=>`<option>${x}</option>`).join('')}</select><label>Details (optional)</label><input id="cn"><button class="p" onclick="addEv()">Add to calendar</button><div id="cm" class="mu"></div></div>`:''}<div class="c"><h3>Calendar</h3>${E.map(e=>{
+    const past=new Date(e.event_date)<new Date();
+    return`<div class="row" style="${past?'opacity:.55':''}"><div><b>${H(e.title)}</b> ${e.level?`<span class="tag">${e.level}L</span>`:''}<div class="mu">${fd(e.event_date)}${e.description?' · '+H(e.description):''}</div></div>${(e.created_by_id==me.id||isAd())?`<button class="s d" onclick="delEv('${e.id}')">✕</button>`:''}</div>`}).join('')||'<span class="mu">No events yet.</span>'}</div>`)
+};
+V.tk=async function(){
+  const q=db.from('support_tickets').select('*').order('created_at',{ascending:false});
+  const T=ok(await (isAd()?q:q.eq('student_id',me.id)));
+  const RP=T.length?ok(await db.from('ticket_replies').select('*').in('ticket_id',T.map(t=>t.id)).order('created_at')):[];
+  v(`${isSt()?`<div class="c"><h3>Raise a ticket</h3><label>Subject</label><input id="ks"><label>Priority</label><select id="kp"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select><label>Details</label><textarea id="km" rows="3"></textarea><button class="p" onclick="newTk()">Submit ticket</button><div id="kx" class="mu"></div></div>`:''}<div class="c"><h3>${isAd()?'All tickets':'My tickets'}</h3>${T.map(t=>{
+    const closed=t.status=='Closed'||t.status=='Resolved';
+    return`<div class="row" style="align-items:flex-start;flex-direction:column"><div style="width:100%"><span class="tag ${t.priority=='Urgent'?'er':''}">${H(t.priority)}</span> <span class="tag ${closed?'ok':''}">${H(t.status)}</span><br><b>${H(t.subject)}</b>${isAd()?` <span class="mu">· ${H(t.student_name||'')}</span>`:''}<div>${H(t.message)}</div><div class="mu">${fd(t.created_at)}</div>${RP.filter(r=>r.ticket_id==t.id).map(r=>`<div class="mu" style="margin-top:6px"><b>${H(r.author_name)}</b> (${RN[r.author_role]||''}): ${H(r.message)}</div>`).join('')}</div>${t.status!='Closed'?`<div class="r" style="width:100%"><input id="kr_${t.id}" placeholder="Write a reply…" style="margin:6px 0;flex:1"><button class="s" onclick="repTk('${t.id}','${t.student_id}')">Reply</button>${isAd()?`<select style="width:auto;margin:6px 0" onchange="setTk('${t.id}',this.value,'${t.student_id}')">${['Open','In Progress','Resolved','Closed'].map(s=>`<option ${s==t.status?'selected':''}>${s}</option>`).join('')}</select>`:''}</div>`:''}</div>`}).join('')||'<span class="mu">No tickets.</span>'}</div>`)
+};
+V.nf=async function(){
+  const N=await myNotes();
+  localStorage.setItem('seen'+me.id,Date.now());
+  const b=$('#nfb');if(b)b.textContent='';
+  v(`<div class="c"><h3>Alerts</h3>${N.map(n=>`<div class="row"><div><b>${H(n.title||'Notice')}</b><div class="mu">${H(n.message||'')}</div></div><span class="mu">${fd(n.created_at)}</span></div>`).join('')||'<span class="mu">No alerts yet.</span>'}</div>`)
+};
+V.adm=async function(){
+  const cnt=async t=>(await db.from(t).select('*',{count:'exact',head:true})).count||0;
+  const [na,ns,nl,nc]=await Promise.all(['admins','students','lecturers','course_reps'].map(cnt));
+  const get=async(t,r)=>ok(await db.from(t).select('id,full_name,email').order('full_name').limit(100)).map(u=>({...u,t,r}));
+  const U=(await Promise.all([get('students','STUDENT'),get('course_reps','COURSE_REP'),get('lecturers','LECTURER')])).flat();
+  v(`<div class="g"><div class="c"><h3>Students</h3><div class="big">${ns}</div></div><div class="c"><h3>Course reps</h3><div class="big">${nc}</div></div><div class="c"><h3>Lecturers</h3><div class="big">${nl}</div></div><div class="c"><h3>Admins</h3><div class="big">${na}</div></div></div>
+<div class="c"><h3>Send announcement</h3><label>To</label><select id="bw"><option value="">Everyone</option><option value="STUDENT">Students</option><option value="COURSE_REP">Course reps</option><option value="LECTURER">Lecturers</option></select><label>Title</label><input id="bt"><label>Message</label><textarea id="bm" rows="3"></textarea><button class="p" onclick="sendBc()">Send</button><div id="bx" class="mu"></div></div>
+<div class="c"><h3>Users</h3>${U.map(u=>`<div class="row"><div><b>${H(u.full_name)}</b> <span class="tag">${RN[u.r]}</span><div class="mu">${H(u.email||'')}</div></div><button class="s d" onclick="delU('${u.t}','${u.id}')">Remove</button></div>`).join('')||'<span class="mu">No users.</span>'}</div>`)
+};
+// ===== Helper functions for those views =====
+async function addEv(){
+  const t=$('#ct').value.trim(),d=$('#cd').value,m=$('#cm');
+  if(!t||!d){m.textContent='Add a title and date.';return}
+  try{
+    const lv=$('#cl').value;
+    ok(await db.from('calendar_events').insert({title:t,description:$('#cn').value.trim()||null,event_date:new Date(d).toISOString(),level:lv?+lv:null,created_by_id:me.id,created_by_role:me.role}));
+    await notify([{target_role:'STUDENT',title:'New calendar event',message:`${t} · ${fd(d)}`,link_url:'/calendar'}]);
+    go('cal');
+  }catch(e){m.textContent=e.message}
+}
+async function delEv(id){
+  if(!confirm('Delete this event?'))return;
+  try{ok(await db.from('calendar_events').delete().eq('id',id));go('cal')}catch(e){alert(e.message)}
+}
+async function newTk(){
+  const s=$('#ks').value.trim(),m=$('#km').value.trim(),x=$('#kx');
+  if(!s||!m){x.textContent='Add a subject and details.';return}
+  try{
+    ok(await db.from('support_tickets').insert({student_id:me.id,student_name:me.name,subject:s,message:m,priority:$('#kp').value}));
+    await notify([{target_role:'ADMIN',title:'New support ticket',message:`${me.name}: ${s}`,link_url:'/tickets'}]);
+    go('tk');
+  }catch(e){x.textContent=e.message}
+}
+async function repTk(id,sid){
+  const m=$('#kr_'+id).value.trim();if(!m)return;
+  try{
+    ok(await db.from('ticket_replies').insert({ticket_id:id,author_name:me.name,author_role:me.role,message:m}));
+    if(isAd())await notify([{target_user_id:sid,title:'Ticket reply',message:m.slice(0,120),link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+async function setTk(id,st,sid){
+  try{
+    ok(await db.from('support_tickets').update({status:st}).eq('id',id));
+    await notify([{target_user_id:sid,title:'Ticket '+st,message:'Your ticket status is now '+st,link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+async function sendBc(){
+  const r=$('#bw').value,t=$('#bt').value.trim(),m=$('#bm').value.trim(),x=$('#bx');
+  if(!t||!m){x.textContent='Add a title and message.';return}
+  try{
+    const roles=r?[r]:['STUDENT','COURSE_REP','LECTURER','ADMIN'];
+    ok(await notify(roles.map(k=>({target_role:k,title:t,message:m,link_url:'/broadcast'}))));
+    x.textContent='Sent.';$('#bt').value='';$('#bm').value='';
+  }catch(e){x.textContent=e.message}
+}
+async function delU(t,id){
+  if(id==me.id){alert('You cannot remove your own account.');return}
+  if(!confirm('Remove this user permanently?'))return;
+  try{ok(await db.from(t).delete().eq('id',id));go('adm')}catch(e){alert(e.message)}
+}
+
+// ===== Results, GPA and CGPA =====
+if(!NAV.ADMIN.includes('res'))NAV.ADMIN.splice(3,0,'res');
+function transcript(R,C){
+  if(!R.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
+  const stamp=r=>r.session+(r.created_at||''),best={};
+  R.forEach(r=>{const o=best[r.course_code];if(!o||stamp(r)>stamp(o))best[r.course_code]=r});
+  const calc=rows=>{let u=0,p=0;rows.forEach(r=>{const c=C[r.course_code];if(!c||c.credit_units==null)return;u+=+c.credit_units;p+=+c.credit_units*grade(+r.score)[1]});return{u,g:u?p/u:0}};
+  const all=calc(Object.values(best)),G={};
+  R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
+  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · retaken courses use the latest result</div></div>`+Object.keys(G).sort().map(k=>{
+    const rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code)),t=calc(rows),[ses,sm]=k.split('|');
+    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0];return`<tr><td>${H(r.course_code)}</td><td>${H(c.title||'—')}</td><td>${c.credit_units??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
+}
+function rdCsv(i){const f=i.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('#rt').value=String(rd.result).trim()};rd.readAsText(f)}
+async function lkRes(){
+  const r=$('#rl').value.trim(),o=$('#rl2');
+  if(!REG.test(r)){o.innerHTML='<div class="c mu">Enter a reg number like 2023/259021.</div>';return}
+  try{o.innerHTML=transcript(ok(await db.from('student_results').select('*').eq('reg_num',r)),window.CRS)}catch(e){o.innerHTML=`<div class="c">${H(e.message)}</div>`}
+}
+async function upRes(){
+  const x=$('#rx'),ses=$('#rs').value,sem=$('#rm').value,rows=[],bad=[];
+  String($('#rt').value).split(/\r?\n/).forEach((ln,i)=>{
+    if(!ln.trim())return;
+    const p=ln.split(/[,\t;]/).map(s=>s.trim().replace(/^"|"$/g,'')),reg=p[0],sc=parseFloat(p[2]);
+    const code=(p[1]||'').toUpperCase().replace(/\s+/g,'').replace(/^([A-Z]+)(\d+[A-Z]?)$/,'$1 $2');
+    if(i==0&&isNaN(sc))return;
+    if(!REG.test(reg))return bad.push(`Line ${i+1}: bad reg number`);
+    if(!window.CRS[code])return bad.push(`Line ${i+1}: unknown course ${code||'?'}`);
+    if(!(sc>=0&&sc<=100))return bad.push(`Line ${i+1}: score must be 0 to 100`);
+    rows.push({reg_num:reg,course_code:code,session:ses,semester:sem,score:sc});
+  });
+  const M=new Map();rows.forEach(r=>M.set(r.reg_num+'|'+r.course_code,r));const U=[...M.values()];
+  if(!U.length){x.textContent='Nothing to upload. '+bad.slice(0,5).join('; ');return}
+  try{
+    for(let i=0;i<U.length;i+=300)ok(await db.from('student_results').upsert(U.slice(i,i+300),{onConflict:'reg_num,course_code,session'}));
+    x.innerHTML=`<span style="color:var(--gr)">Saved ${U.length} results.</span>${bad.length?' '+bad.length+' rows skipped: '+H(bad.slice(0,5).join('; ')):''}`;
+    notify([{target_role:'STUDENT',title:'Results uploaded',message:`${sem} semester ${ses} results are available.`,link_url:'/results'}]);
+  }catch(e){x.textContent=e.message}
+}
+
+// ===== Show / hide password (adds an eye button to every password field) =====
+(function(){
+const EYE='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+OFF='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+function wrap(){
+  document.querySelectorAll('input[type=password]:not([data-pw])').forEach(i=>{
+    i.dataset.pw=1;
+    const w=document.createElement('div');w.className='pw';
+    i.parentNode.insertBefore(w,i);w.appendChild(i);
+    const b=document.createElement('button');b.type='button';b.className='pwb';b.setAttribute('aria-label','Show password');b.innerHTML=EYE;
+    b.onclick=()=>{const show=i.type=='password';i.type=show?'text':'password';b.innerHTML=show?OFF:EYE;b.setAttribute('aria-label',show?'Hide password':'Show password')};
+    w.appendChild(b);
+  });
+}
+new MutationObserver(wrap).observe(document.body,{childList:true,subtree:true});
+wrap();
+})();
+
+// ===== Auto logout after inactivity =====
+(function(){
+const IDLE_MIN=10, WARN_SEC=60, LIM=IDLE_MIN*60000;   // change IDLE_MIN to set the timeout
+let last=Date.now(),warned=false,saved=0;
+const store=()=>{saved=last;localStorage.setItem('lastActive',last)};
+const mark=()=>{if(warned||!me)return;last=Date.now();if(last-saved>5000)store()};
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(e=>addEventListener(e,mark,{passive:true,capture:true}));
+window.idleStay=()=>{warned=false;last=Date.now();store();closeM()};
+function expire(){warned=false;closeM();out();msg('You were signed out after '+IDLE_MIN+' minutes of inactivity.','ok')}
+function tick(){
+  if(!me){warned=false;last=Date.now();return}
+  const idle=Date.now()-last;
+  if(idle>=LIM)return expire();
+  if(idle>=LIM-WARN_SEC*1000){
+    const left=Math.ceil((LIM-idle)/1000);
+    if(!warned){warned=true;modal(`<h3>Still there?</h3><p class="mu">For your security you will be signed out in <b id="idc">${left}</b>s because of inactivity.</p><div class="r"><button class="p" onclick="idleStay()">Stay signed in</button><button onclick="closeM();out()">Sign out now</button></div>`)}
+    else{const c=document.getElementById('idc');if(c)c.textContent=left}
+  }
+}
+setInterval(tick,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+document.getElementById('md').addEventListener('click',e=>{if(warned&&e.target.id==='md')idleStay()});
+const la=+localStorage.getItem('lastActive')||0;
+if(me&&la&&Date.now()-la>LIM)expire();
+})();
+</script>
 
 </body>
 </html>
