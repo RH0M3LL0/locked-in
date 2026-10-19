@@ -2025,6 +2025,50 @@ V.mat=async function(){
 };
 })();
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (after ALL your other patches, after the LAST </script>) -->
+<script>
+// ===== Materials: "✨ Questions" (lecturers/admins) and "✨ Drill" (students) buttons =====
+(function(){
+// admins need the Assess tab to reach the question generator
+if(!NAV.ADMIN.includes('exam'))NAV.ADMIN.splice(Math.max(NAV.ADMIN.indexOf('mat')+1,1),0,'exam');
+
+const oldMat=V.mat;
+V.mat=async function(){
+  await oldMat();
+  if(me.role=='COURSE_REP')return;
+  let M=[];
+  try{M=ok(await db.from('course_materials').select('id,file_url'))}catch(e){return}
+  const byUrl={};M.forEach(m=>byUrl[m.file_url]=m.id);
+  document.querySelectorAll('#v .row a[href]').forEach(a=>{
+    const id=byUrl[a.getAttribute('href')],box=a.parentElement;
+    if(!id||!box||box.querySelector('.aib'))return;
+    const b=document.createElement('button');
+    b.className='s p aib';b.textContent=isSt()?'✨ Drill':'✨ Questions';
+    b.onclick=()=>isSt()?matDrill(id):matGen(id);
+    box.insertBefore(b,a);
+  });
+};
+
+// Student: open the drill screen with this material chosen and start straight away
+window.matDrill=async function(id){
+  tab='exam';await R();
+  const s=$('#dm');
+  if(!s){return}
+  s.value=id;
+  if(s.value!=id){alert('That material is not available for drills.');return}
+  startDrill();
+};
+
+// Lecturer/admin: open the question generator with this material chosen
+window.matGen=async function(id){
+  tab='exam';await R();
+  const s=$('#qm');
+  if(!s)return;
+  s.value=id;
+  s.scrollIntoView({behavior:'smooth',block:'center'});
+};
+})();
+</script>
 
 </body>
 </html>
