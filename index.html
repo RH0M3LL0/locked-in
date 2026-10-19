@@ -1962,6 +1962,69 @@ window.delBatch=async function(){
 };
 })();
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (after your other patches, after the LAST </script>) -->
+<script>
+// ===== Course-rep assignment: only admins and lecturers can assign =====
+(function(){
+TI.rep=['🧑‍🏫','Reps'];
+[NAV.ADMIN,NAV.LECTURER].forEach(n=>{if(!n.includes('rep'))n.splice(n.indexOf('nf'),0,'rep')});
+const staff=()=>isAd()||isLec();
+
+// courses this person may assign reps to: admin = all, lecturer = only the ones they teach
+async function myCourses(){
+  if(isAd())return ok(await db.from('courses').select('id,code,title').order('code'));
+  const L=ok(await db.from('course_lecturers').select('courses(id,code,title)').eq('lecturer_id',me.id));
+  return L.map(x=>x.courses).filter(Boolean).sort((a,b)=>a.code.localeCompare(b.code));
+}
+const mayUse=async cid=>isAd()||(await myCourses()).some(c=>String(c.id)==String(cid));
+
+V.rep=async function(){
+  if(!staff())return v('<div class="c">Only lecturers and admins can manage course reps.</div>');
+  const C=await myCourses(),ids=C.map(c=>c.id);
+  const P=ok(await db.from('course_reps').select('id,full_name,reg_num,level').order('full_name'));
+  const A=ids.length?ok(await db.from('course_rep_assignments').select('*,courses(code,title),course_reps(full_name,reg_num)').in('course_id',ids).order('created_at',{ascending:false})):[];
+  window.RPA=A;
+  v(`<div class="c"><h3>Assign a course rep</h3>${C.length?`<label>Course</label><select id="rc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Course rep</label><select id="rp">${P.map(p=>`<option value="${p.id}">${H(p.full_name)} · ${H(p.reg_num||'')} · ${p.level||'—'}L</option>`).join('')||'<option value="">No course reps have signed up yet</option>'}</select><button class="p" onclick="assignRep()">Assign</button><div id="rpx" class="mu" style="margin-top:8px"></div>`:'<span class="mu">You are not linked to any course yet, so there is nothing to assign.</span>'}</div>
+<div class="c"><h3>Current assignments</h3>${A.map((a,i)=>`<div class="row"><div><b>${H((a.course_reps||{}).full_name||'—')}</b> <span class="tag">${H((a.courses||{}).code||'')}</span><div class="mu">${H((a.course_reps||{}).reg_num||'')} · assigned ${fd(a.created_at)} by ${a.assigned_by_role?RN[a.assigned_by_role]:'—'}</div></div><button class="s d" onclick="unassignRep(${i})">Remove</button></div>`).join('')||'<span class="mu">No course reps assigned yet.</span>'}</div>`);
+};
+
+window.assignRep=async function(){
+  if(!staff())return;
+  const c=$('#rc').value,p=$('#rp').value,x=$('#rpx');
+  if(!c||!p){x.textContent='Choose a course and a course rep.';return}
+  try{
+    if(!(await mayUse(c)))throw new Error('You can only assign reps to courses you teach.');
+    const{error}=await db.from('course_rep_assignments').insert({course_id:c,rep_id:p,assigned_by_id:me.id,assigned_by_role:me.role});
+    if(error)throw new Error(error.code=='23505'?'That rep is already assigned to this course.':error.message);
+    const code=$('#rc').selectedOptions[0].textContent.split(' - ')[0];
+    await notify([{target_user_id:p,title:'Course rep assignment',message:'You are now the course rep for '+code,link_url:'/materials'}]);
+    go('rep');
+  }catch(e){x.textContent=e.message}
+};
+
+window.unassignRep=async function(i){
+  const a=window.RPA[i];
+  if(!staff()||!a||!confirm('Remove this course rep from '+((a.courses||{}).code||'the course')+'?'))return;
+  try{
+    if(!(await mayUse(a.course_id)))throw new Error('You can only change reps for courses you teach.');
+    const d=ok(await db.from('course_rep_assignments').delete().eq('id',a.id).select('id'));
+    if(!d.length)throw new Error('Nothing was removed. The database may be blocking this (see the SQL policy).');
+    go('rep');
+  }catch(e){alert(e.message)}
+};
+
+// Course reps can only upload materials for courses they were assigned to
+const oldMat=V.mat;
+V.mat=async function(){
+  await oldMat();
+  if(me.role!='COURSE_REP')return;
+  const sel=$('#mc');if(!sel)return;
+  const A=ok(await db.from('course_rep_assignments').select('course_id').eq('rep_id',me.id)).map(a=>String(a.course_id));
+  [...sel.options].forEach(o=>{if(!A.includes(o.value))o.remove()});
+  if(!sel.options.length){const card=sel.closest('.c');if(card)card.innerHTML='<h3>Upload PDF</h3><span class="mu">You have not been assigned to a course yet. A lecturer or admin can assign you.</span>'}
+};
+})();
+</script>
 
 </body>
 </html>
