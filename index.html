@@ -1752,6 +1752,153 @@ const la=+localStorage.getItem('lastActive')||0;
 if(me&&la&&Date.now()-la>LIM)expire();
 })();
 </script>
+<!-- PASTE THIS WHOLE BLOCK just before </body> (after your LAST </script>) -->
+<script>
+// ===== Result-sheet reader: understands the department PDF layout =====
+// Each course = score / grade / GP. Blank cells are handled by column position.
+(function(){
+const HDR=/^(?:[A-Za-z]{2,5}-)?[A-Za-z]{3}\s?\d{3}[A-Za-z]?$/,REGX=/^\d{4}\/\d{6}$/,NUM=/^\d{1,3}(\.\d+)?$/;
+const ck=s=>String(s).toUpperCase().replace(/UNN/g,'').replace(/[^A-Z0-9]/g,'');
+
+// match a sheet heading (UNN-CRE 327, VTE 301A ...) to a code in your courses table
+function courseOf(raw,C){
+  const k=ck(raw),k2=/\d[A-Z]$/.test(k)?k.slice(0,-1):null;let alt=null;
+  for(const c of Object.keys(C)){const kk=ck(c);if(kk==k)return c;if(kk==k2)alt=c}
+  return alt;
+}
+
+// ---- 1. read every word of the PDF with its x/y position ----
+async function pdfTokens(buf){
+  const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  await loadJs(B+'pdf.min.js');const lib=window.pdfjsLib;
+  if(!lib.GlobalWorkerOptions.workerSrc){
+    try{const t=await(await fetch(B+'pdf.worker.min.js')).text();lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}))}catch(e){lib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js'}
+  }
+  const pdf=await lib.getDocument({data:new Uint8Array(buf)}).promise,pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await(await pdf.getPage(p)).getTextContent(),T=[],R=[];
+    tc.items.forEach(i=>{
+      const s=i.str.trim();if(!s)return;
+      const X=i.transform[4],Y=i.transform[5];
+      if(HDR.test(s)){T.push({s,x:X,y:Y,hd:true});return}
+      if(Math.abs(i.transform[1])>0.1){R.push({s,x:X,y:Y,up:i.transform[1]>0});return}   // rotated text
+      const re=/\S+/g,raw=i.str;let m;
+      while((m=re.exec(raw)))T.push({s:m[0],x:X+(i.width||0)*m.index/raw.length,y:Y});
+    });
+    // rotated column headings (course codes), re-joined if split
+    const G=[];R.forEach(q=>{const g=G.find(g=>Math.abs(g.x-q.x)<3);if(g)g.p.push(q);else G.push({x:q.x,p:[q]})});
+    G.forEach(g=>{
+      const up=g.p[0].up;g.p.sort((a,b)=>up?a.y-b.y:b.y-a.y);
+      const s=g.p.map(q=>q.s).join(' ').replace(/\s+/g,' ').trim();
+      if(HDR.test(s))T.push({s,x:g.x,y:Math.min(...g.p.map(q=>q.y)),hd:true});
+    });
+    pages.push(T);
+  }
+  return pages;
+}
+
+// ---- 2. turn positioned words into {reg, course, score} rows ----
+function readSheet(pages,C){
+  const rows=[],issues=[],info={},seen={},unk={};let cols=[],none=0;
+  const toCols=g=>g.items.map(h=>({code:h.s,x:h.x}));
+  pages.forEach(T=>{
+    const groups=[];
+    T.filter(t=>t.hd).sort((a,b)=>b.y-a.y).forEach(h=>{
+      const g=groups.find(g=>Math.abs(g.y-h.y)<30);
+      if(g){g.items.push(h);g.y=Math.min(g.y,h.y)}else groups.push({y:h.y,items:[h]});
+    });
+    const ev=[...groups.map(g=>({y:g.y,g})),...T.filter(t=>!t.hd&&REGX.test(t.s)).map(r=>({y:r.y,r}))].sort((a,b)=>b.y-a.y);
+    ev.forEach(e=>{
+      if(e.g){cols=toCols(e.g);return}
+      if(!cols.length&&groups.length)cols=toCols(groups[0]);
+      const r=e.r,reg=r.s;
+      const tk=T.filter(t=>!t.hd&&Math.abs(t.y-r.y)<4&&t.x>r.x+5).sort((a,b)=>a.x-b.x);
+      const tr=[];let i=0;
+      while(i+2<tk.length&&NUM.test(tk[i].s)&&/^[A-F]$/.test(tk[i+1].s)&&NUM.test(tk[i+2].s)){
+        tr.push({sc:+tk[i].s,l:tk[i+1].s,gp:+tk[i+2].s,x:tk[i].x});i+=3;
+      }
+      const tail=tk.slice(i).map(t=>t.s).filter(s=>NUM.test(s)).map(Number);   // units, TGP, [carry-over units], total
+      if(!tr.length){none++;return}
+      let sum=0;
+      tr.forEach(t=>{
+        let b=null,d=1e9;cols.forEach(c=>{const dd=Math.abs(c.x-t.x);if(dd<d){d=dd;b=c}});
+        if(!b||d>45){issues.push(reg+': score '+t.sc+' did not line up with a course column');return}
+        const code=courseOf(b.code,C);
+        if(!code){unk[b.code]=1;return}
+        const g=grade(t.sc),u=C[code].credit_units;sum+=t.gp;
+        if(g[0]!=t.l)issues.push(reg+' '+code+': sheet says '+t.l+' but '+t.sc+' is '+g[0]);
+        else if(u!=null&&+u*g[1]!=t.gp)issues.push(reg+' '+code+': sheet GP '+t.gp+' does not fit '+u+' units');
+        const k=reg+'|'+code,row={reg_num:reg,course_code:code,score:t.sc};
+        if(seen[k]!=null)rows[seen[k]]=row;else{seen[k]=rows.length;rows.push(row)}
+      });
+      if(tail.length>1){
+        const carry=tail.length>3?tail[2]:0,tgp=tail[1];
+        info[reg]={tgp,carry,units:tail[0]};
+        if(sum>tgp||(!carry&&sum!=tgp))issues.push(reg+': sheet total points is '+tgp+' but its courses add up to '+sum);
+      }
+    });
+  });
+  Object.keys(unk).forEach(c=>issues.unshift('Course '+c+' is not in your courses table, so its scores were skipped'));
+  return{rows,issues,info,none};
+}
+
+// ---- 3. preview with a per-student tally ----
+async function showRes(rows,issues,sh){
+  const x=$('#rv'),C=window.CRS||{};window.RES_ROWS=rows;
+  if(!rows.length){x.innerHTML='<span style="color:var(--er)">No results found. Make sure each row has a reg number like 2023/259021 and course codes that exist in your course list.</span>'+(issues.length?'<div class="mu">'+issues.slice(0,6).map(H).join('<br>')+'</div>':'');return}
+  const regs=[...new Set(rows.map(r=>r.reg_num))],N={};
+  try{for(let i=0;i<regs.length;i+=150)ok(await db.from('students').select('reg_num,full_name').in('reg_num',regs.slice(i,i+150))).forEach(s=>N[s.reg_num]=s.full_name)}catch(e){}
+  const miss=regs.filter(r=>!N[r]),by={};
+  rows.forEach(r=>{
+    const u=+(C[r.course_code]||{}).credit_units||0,p=grade(r.score)[1],b=by[r.reg_num]||(by[r.reg_num]={n:0,u:0,gp:0});
+    b.n++;b.u+=u;b.gp+=u*p;
+  });
+  const I=(sh&&sh.info)||{};
+  x.innerHTML=`<div class="r" style="margin-bottom:8px"><span class="tag ok">${rows.length} results</span><span class="tag">${regs.length} students</span>${sh&&sh.none?`<span class="tag">${sh.none} with no scores</span>`:''}${miss.length?`<span class="tag er">${miss.length} not registered on the portal</span>`:''}${issues.length?`<span class="tag er">${issues.length} warnings</span>`:''}</div>
+<div class="ov"><table><tr><th>Reg no.</th><th>Name</th><th>Courses</th><th>Units</th><th>TGP</th><th>GPA</th><th>Sheet TGP</th></tr>${regs.slice(0,40).map(g=>{const b=by[g];return`<tr><td>${H(g)}</td><td>${N[g]?H(N[g]):'<span class="tag er">not registered</span>'}</td><td>${b.n}</td><td>${b.u}</td><td>${b.gp}</td><td><b>${b.u?(b.gp/b.u).toFixed(2):'—'}</b></td><td>${I[g]?I[g].tgp:'—'}</td></tr>`}).join('')}</table></div>${regs.length>40?`<p class="mu">Showing 40 of ${regs.length} students.</p>`:''}
+<p class="mu" style="margin-top:8px">GPA here covers only the courses on this sheet. “Sheet TGP” is the total printed on the sheet (it includes carry-over courses).</p>${issues.length?`<div class="mu" style="margin-top:8px">${issues.slice(0,8).map(H).join('<br>')}${issues.length>8?'<br>…and '+(issues.length-8)+' more':''}</div>`:''}<button class="p" style="margin-top:10px" onclick="saveRes()">Save ${rows.length} results</button><div id="rx" class="mu" style="margin-top:8px"></div>`;
+}
+
+// ---- 4. hook into the existing upload screen ----
+window.prevRes=async function(){
+  const r=parseRes($('#rt').value.split(/\r?\n/).map(l=>l.replace(/[,;]/g,'\t')),window.CRS);
+  await showRes(r.rows,r.issues,null);
+};
+
+window.rdFile=async function(i){
+  const f=i.files[0],x=$('#rv');if(!f)return;
+  x.innerHTML='<span class="mu">Reading '+H(f.name)+'…</span>';
+  try{
+    const ext=(f.name.split('.').pop()||'').toLowerCase();let lines;
+    if(ext=='pdf'){
+      const buf=await f.arrayBuffer(),r=readSheet(await pdfTokens(buf.slice(0)),window.CRS);
+      if(r.rows.length){
+        $('#rt').value=r.rows.map(q=>q.reg_num+','+q.course_code+','+q.score).join('\n');
+        return showRes(r.rows,r.issues,r);
+      }
+      lines=await pdfLines(buf.slice(0));   // not a grid sheet: use the old reader
+    }
+    else if(ext=='docx')lines=await docxLines(await f.arrayBuffer());
+    else if(ext=='xlsx')lines=await xlsxLines(await f.arrayBuffer());
+    else if(ext=='csv'||ext=='txt')lines=(await f.text()).replace(/[,;]/g,'\t').split(/\r?\n/);
+    else{x.innerHTML='<span style="color:var(--er)">Use a PDF, DOCX, XLSX or CSV file.</span>';return}
+    if(!lines.some(l=>String(l).trim())){x.innerHTML='<span style="color:var(--er)">No readable text found. If this PDF is a scanned picture, export the results as Excel or Word instead.</span>';return}
+    $('#rt').value=lines.join('\n');prevRes();
+  }catch(e){x.innerHTML='<span style="color:var(--er)">'+H(e.message)+'</span>'}
+};
+
+// pasted rows / CSV / Word / Excel: also accept "UNN-CRE 327" style codes
+const oldParse=window.parseRes;
+window.parseRes=function(lines,C){
+  const C2={...C},AL={};
+  Object.keys(C).forEach(k=>{const m=ck(k).match(/^([A-Z]{3})(\d{3}[A-Z]?)$/);if(m){const a=m[1]+' '+m[2];if(!C2[a]){C2[a]=C[k];AL[a]=k}}});
+  const r=oldParse(lines,C2);
+  r.rows.forEach(q=>{if(AL[q.course_code])q.course_code=AL[q.course_code]});
+  return r;
+};
+window.readSheet=readSheet;
+})();
+</script>
 
 </body>
 </html>
