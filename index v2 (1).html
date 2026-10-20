@@ -1,0 +1,1374 @@
+
+
+
+<!doctype html>
+<html lang="en"><head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Computer and Robotics Education Portal</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="CRE Portal"><meta name="application-name" content="CRE Portal">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060a14; --bg2:#0a1020; --bg3:#101a32;
+  --surface:rgba(19,28,51,0.72); --surface-2:rgba(24,35,65,0.9); --surface-3:rgba(16,23,42,0.95);
+  --border:rgba(138,155,189,0.14); --border-2:rgba(138,155,189,0.22);
+  --tx:#e8eeff; --tx2:#a8b5d1; --mu:#7d8eb1;
+  --ac:#5cf3ff; --ac2:#7c6cff; --gr:#2eff88; --er:#ff5478;
+  --r12:12px; --r16:16px; --r20:20px; --r24:24px;
+  --shadow:0 12px 40px rgba(0,0,0,.45), 0 0 0 1px var(--border) inset;
+  --shadow-glow:0 0 32px rgba(92,243,255,.18);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior-y:none;scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--tx);
+  font:15px/1.6 "Geist", system-ui, -apple-system, sans-serif;
+  min-height:100vh; position:relative;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-2;
+  background:
+    radial-gradient(800px 500px at 15% -10%, rgba(124,108,255,.22), transparent 60%),
+    radial-gradient(700px 500px at 90% 0%, rgba(92,243,255,.18), transparent 60%),
+    radial-gradient(900px 600px at 50% 120%, rgba(46,255,136,.08), transparent 60%),
+    linear-gradient(180deg, var(--bg2), var(--bg));
+}
+body::after{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.28;
+  background-image:
+    linear-gradient(rgba(138,155,189,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(138,155,189,.06) 1px, transparent 1px);
+  background-size:28px 28px;
+  mask-image:radial-gradient(80% 60% at 50% 0%, black, transparent 90%);
+}
+
+/* loader */
+#ld{position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .6s ease, transform .6s ease}
+#ld.x{opacity:0;pointer-events:none;transform:scale(1.02)}
+.gear{width:84px;height:84px;color:var(--ac);animation:sp 3.5s linear infinite;filter:drop-shadow(0 0 18px rgba(92,243,255,.6))}
+@keyframes sp{to{transform:rotate(360deg)}}
+.bar{width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;width:46%;background:linear-gradient(90deg,var(--ac2),var(--ac),var(--gr));box-shadow:0 0 12px var(--ac);animation:sl 1.2s ease-in-out infinite;border-radius:99px}
+@keyframes sl{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
+
+/* layout */
+#app{max-width:1120px;margin:0 auto;padding:18px 16px 120px;min-height:80vh}
+@media(min-width:900px){#app{padding:24px 24px 40px 104px}}
+
+/* top */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border-radius:var(--r20);box-shadow:var(--shadow)}
+header b{font-size:15px;font-weight:600;letter-spacing:-.02em;color:var(--tx);display:flex;align-items:center;gap:10px}
+header b::before{content:"";width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--ac2),var(--ac));display:inline-block;box-shadow:0 0 16px rgba(124,108,255,.4)}
+.bc{font:12px "Geist Mono", ui-monospace, monospace;color:var(--mu);margin:4px 4px 14px;letter-spacing:.02em}
+.bc b{color:var(--tx2);font-weight:500}
+
+/* nav - desktop rail + mobile bottom */
+nav{
+  position:fixed; z-index:20; background:var(--surface-3); border:1px solid var(--border);
+  backdrop-filter:blur(22px) saturate(1.3); -webkit-backdrop-filter:blur(22px) saturate(1.3);
+  box-shadow:var(--shadow);
+}
+@media(max-width:899px){
+  nav{left:10px;right:10px;bottom:10px;display:flex;gap:2px;padding:6px;border-radius:20px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));overflow-x:auto;scrollbar-width:none}
+  nav button{flex:1 0 58px}
+}
+@media(min-width:900px){
+  nav{left:16px;top:16px;bottom:16px;width:72px;display:flex;flex-direction:column;gap:6px;padding:10px 6px;border-radius:22px}
+}
+nav button{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px; min-height:56px; padding:8px 6px; border:0; background:transparent;
+  color:var(--mu); border-radius:14px; cursor:pointer; transition:.22s ease; font-size:20px; line-height:1;
+  position:relative; touch-action:manipulation
+}
+nav button:hover{color:var(--tx);background:rgba(255,255,255,.06)}
+nav button.on{background:rgba(124,108,255,.14);color:var(--tx);box-shadow:0 0 0 1px rgba(124,108,255,.22) inset, 0 0 18px rgba(124,108,255,.18)}
+nav button.on::after{content:"";position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:99px;background:var(--ac2);box-shadow:0 0 8px var(--ac2)}
+@media(max-width:899px){nav button.on::after{left:50%;top:-6px;transform:translateX(-50%);width:18px;height:3px}}
+nav small{font:500 10px/1 "Geist", sans-serif;letter-spacing:.04em;color:inherit;opacity:.9}
+
+/* cards */
+.c{
+  background:var(--surface); border:1px solid var(--border);
+  backdrop-filter:blur(18px) saturate(1.15); -webkit-backdrop-filter:blur(18px) saturate(1.15);
+  border-radius:var(--r20); padding:18px; margin-bottom:14px; box-shadow:var(--shadow);
+  position:relative; overflow:hidden; transition:.2s ease;
+}
+.c::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);opacity:.9}
+.c:hover{border-color:var(--border-2); transform:translateY(-1px); box-shadow:0 16px 48px rgba(0,0,0,.5), 0 0 0 1px var(--border) inset}
+.c h3{margin:0 0 12px;font-size:14px;font-weight:600;letter-spacing:-.01em;color:var(--tx);display:flex;align-items:center;gap:8px}
+.c h3::before{content:"";width:3px;height:14px;border-radius:99px;background:var(--ac);display:inline-block;box-shadow:0 0 8px var(--ac)}
+
+.tile{
+  text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;
+  min-height:96px; border-radius:var(--r16); background:var(--surface); border:1px solid var(--border);
+  transition:.2s; cursor:pointer; font-weight:500;
+}
+.tile:hover{transform:translateY(-2px);border-color:rgba(124,108,255,.28);box-shadow:var(--shadow-glow)}
+.tile div:first-child{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--border)}
+
+/* inputs */
+input,select,textarea{
+  font:inherit; font-size:15px; width:100%; padding:12px 14px; border-radius:12px;
+  border:1px solid var(--border); background:rgba(8,12,22,.72); color:var(--tx);
+  margin:6px 0 12px; outline:none; transition:.2s ease;
+}
+input::placeholder,textarea::placeholder{color:var(--mu)}
+input:focus,select:focus,textarea:focus{border-color:rgba(124,108,255,.45); box-shadow:0 0 0 3px rgba(124,108,255,.18), 0 0 20px rgba(124,108,255,.12); background:rgba(10,14,26,.9)}
+input[type=checkbox]{width:18px;height:18px;margin:0 10px 0 0;accent-color:var(--ac2);border-radius:6px}
+label{font-size:12.5px;font-weight:500;letter-spacing:.02em;color:var(--tx2);margin-top:2px;display:block}
+.g{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* buttons */
+button{
+  font:500 14px/1 "Geist", sans-serif; border:1px solid var(--border); background:var(--surface-2);
+  color:var(--tx); padding:10px 16px; border-radius:12px; cursor:pointer; min-height:42px;
+  touch-action:manipulation; transition:.2s ease; letter-spacing:-.01em;
+}
+button:hover{transform:translateY(-1px);border-color:var(--border-2);background:rgba(28,40,70,.95)}
+button:active{transform:translateY(0px)}
+button.p{
+  background:linear-gradient(135deg, var(--ac2) 0%, #5b8def 45%, var(--ac) 100%);
+  color:#08101e; border-color:transparent; font-weight:650;
+  box-shadow:0 8px 24px rgba(92,140,255,.35), 0 0 0 1px rgba(255,255,255,.12) inset;
+}
+button.p:hover{box-shadow:0 12px 32px rgba(92,140,255,.45), 0 0 20px rgba(92,243,255,.25)}
+button.g2{background:linear-gradient(135deg,#1aff86,#00e67a);color:#04210f;border-color:transparent;font-weight:650;box-shadow:0 8px 20px rgba(46,255,136,.28)}
+button.d{color:var(--er);background:rgba(255,84,120,.08);border-color:rgba(255,84,120,.22)}
+button.d:hover{background:rgba(255,84,120,.14)}
+button.s{padding:7px 12px;min-height:34px;font-size:13px;border-radius:10px;background:rgba(255,255,255,.06)}
+button.s:hover{background:rgba(255,255,255,.1)}
+
+/* utils */
+.mu{color:var(--mu);font-size:13px;line-height:1.5}
+.tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.06); color:var(--tx2);
+  border:1px solid var(--border); border-radius:99px; padding:3px 10px; font:500 11.5px/1 "Geist Mono", monospace; letter-spacing:.02em;
+}
+.tag.ok{color:var(--gr);background:rgba(46,255,136,.1);border-color:rgba(46,255,136,.22)}
+.tag.er{color:var(--er);background:rgba(255,84,120,.1);border-color:rgba(255,84,120,.22)}
+.big{
+  font:700 52px/1 "Geist Mono", monospace; text-align:center; letter-spacing:-.04em;
+  color:var(--tx); padding:12px 0;
+  background:linear-gradient(180deg, #fff 10%, var(--mu) 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 18px rgba(92,243,255,.25))
+}
+.ov{overflow-x:auto; border-radius:12px; border:1px solid var(--border)}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);background:rgba(255,255,255,.02)}
+.row{
+  display:flex;justify-content:space-between;gap:12px;padding:14px 0;
+  border-bottom:1px solid var(--border);align-items:center;transition:.15s
+}
+.row:last-child{border:0}.row:hover{background:rgba(255,255,255,.02);margin:0 -18px;padding-left:18px;padding-right:18px;border-radius:10px}
+.lw{max-width:420px;margin:6vh auto 0}
+.lnk{background:none;border:0;color:var(--ac);padding:6px 0;min-height:0;text-decoration:none;font-weight:500;position:relative}
+.lnk::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1px;background:currentColor;opacity:.4;transform:scaleX(0);transform-origin:left;transition:.25s}
+.lnk:hover::after{transform:scaleX(1)}
+#md{position:fixed;inset:0;z-index:50;background:rgba(3,7,16,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:16px}
+#md.on{display:flex;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#md .c{max-width:440px;width:100%;max-height:90vh;overflow:auto;margin:0;animation:pop .32s cubic-bezier(.16,1,.3,1)}
+@keyframes pop{from{transform:translateY(12px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+
+/* custom scroll */
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:rgba(138,155,189,.22);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:rgba(138,155,189,.34)}
+
+/* search input glow */
+#dq{padding-left:40px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%237d8eb1' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px 50%}
+
+/* improvements for auth view */
+.lw.c{padding:22px 20px 18px;border-radius:24px}
+.lw.c h2{font-size:22px;font-weight:700;letter-spacing:-.03em}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<script>(function(){var t=localStorage.getItem("theme")||"system";document.documentElement.dataset.theme=t})()</script>
+
+<style id="redesign">
+/* ===== Redesign: Learnspace look. Tokens ===== */
+:root,html[data-theme=dark]{color-scheme:dark;--bg:#0b1020;--bg2:#0f1630;--surface:#131a33;--surface-2:#1b2447;--surface-3:#0f1631;--border:rgba(148,163,210,.16);--border-2:rgba(148,163,210,.32);--tx:#eef1fb;--tx2:#bcc4e0;--mu:#8f99bd;--ac:#8b7dff;--ac2:#6d5bf6;--gr:#2dd4a7;--er:#ff6b81;--am:#f5a524;--on:#fff;--sh:0 1px 0 rgba(255,255,255,.04) inset,0 10px 28px rgba(0,0,0,.32);--hv:rgba(255,255,255,.06);--in:#0d1329}
+html[data-theme=light]{color-scheme:light;--bg:#f7f8fc;--bg2:#f1f3fa;--surface:#fff;--surface-2:#eef0f8;--surface-3:#fff;--border:#dde1ef;--border-2:#c3cae3;--tx:#12172b;--tx2:#38405f;--mu:#5b6384;--ac:#5846e6;--ac2:#5846e6;--gr:#0c8a6c;--er:#cb2646;--am:#a35e08;--on:#fff;--sh:0 1px 2px rgba(20,28,60,.06),0 10px 28px rgba(20,28,60,.06);--hv:rgba(20,28,60,.05);--in:#fff}
+@media(prefers-color-scheme:light){html[data-theme=system]{color-scheme:light;--bg:#f7f8fc;--bg2:#f1f3fa;--surface:#fff;--surface-2:#eef0f8;--surface-3:#fff;--border:#dde1ef;--border-2:#c3cae3;--tx:#12172b;--tx2:#38405f;--mu:#5b6384;--ac:#5846e6;--ac2:#5846e6;--gr:#0c8a6c;--er:#cb2646;--am:#a35e08;--on:#fff;--sh:0 1px 2px rgba(20,28,60,.06),0 10px 28px rgba(20,28,60,.06);--hv:rgba(20,28,60,.05);--in:#fff}}
+:root{--fd:"Sora","Plus Jakarta Sans",system-ui,sans-serif;--fb:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;--sbw:264px}
+html,body{font-family:var(--fb)}
+body{font:15px/1.6 var(--fb);background:var(--bg);color:var(--tx)}
+body::before{background:radial-gradient(900px 420px at 85% -10%,color-mix(in srgb,var(--ac2) 14%,transparent),transparent 70%);z-index:-1}
+body::after{display:none}
+h1,h2,h3,.big,.pg,.brand b{font-family:var(--fd)}
+/* buttons */
+button{font:600 14px/1 var(--fb);background:var(--surface);border:1px solid var(--border);color:var(--tx);border-radius:12px;min-height:44px;letter-spacing:0}
+button:hover{transform:none;background:var(--surface-2);border-color:var(--border-2)}
+button.p{background:var(--ac2);color:var(--on);border-color:transparent;box-shadow:none}
+button.p:hover{background:color-mix(in srgb,var(--ac2) 88%,#000);box-shadow:none}
+button.g2{background:var(--gr);color:#04170f;box-shadow:none}
+button.d{color:var(--er);background:color-mix(in srgb,var(--er) 9%,transparent);border-color:color-mix(in srgb,var(--er) 30%,transparent)}
+button.s{min-height:36px;padding:7px 12px;background:var(--surface-2);border-radius:10px}
+button.s:hover{background:var(--hv)}
+.lnk{color:var(--ac);background:none!important;border:0;min-height:0}
+/* cards */
+.c{background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--sh);backdrop-filter:none;-webkit-backdrop-filter:none;margin-bottom:16px}
+.c::before{display:none}
+.c:hover{transform:none;border-color:var(--border-2);box-shadow:var(--sh)}
+.c h3{font:700 16px/1.3 var(--fd);letter-spacing:-.01em;margin-bottom:14px}
+.c h3::before{background:var(--ac2);box-shadow:none;width:4px;height:16px}
+.tile{background:var(--surface);border-radius:16px;box-shadow:none}
+.tile:hover{transform:none;border-color:var(--ac2);box-shadow:none;background:var(--surface-2)}
+.tile div:first-child{background:var(--surface-2);border-color:var(--border)}
+.row:hover{background:var(--hv)}
+.big{font:700 52px/1 var(--fd);background:none;-webkit-text-fill-color:currentColor;color:var(--tx);filter:none;letter-spacing:-.03em}
+.tag{background:var(--surface-2);color:var(--tx2);border-color:var(--border);font:600 12px/1 var(--fb);letter-spacing:0}
+.tag.ok{color:var(--gr);background:color-mix(in srgb,var(--gr) 12%,transparent);border-color:color-mix(in srgb,var(--gr) 30%,transparent)}
+.tag.er{color:var(--er);background:color-mix(in srgb,var(--er) 11%,transparent);border-color:color-mix(in srgb,var(--er) 30%,transparent)}
+th{text-transform:none;letter-spacing:0;font-size:12.5px;background:var(--surface-2);color:var(--tx2)}
+input,select,textarea{background:var(--in);color:var(--tx);border:1px solid var(--border-2);border-radius:12px;min-height:44px}
+input:focus,select:focus,textarea:focus{border-color:var(--ac2);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac2) 28%,transparent);background:var(--in)}
+label{letter-spacing:0;font-size:13px;font-weight:600}
+input[type=checkbox]{accent-color:var(--ac2);min-height:0}
+.ov{border-color:var(--border)}
+#md{background:color-mix(in srgb,var(--bg) 72%,#000);backdrop-filter:blur(8px)}
+::-webkit-scrollbar-thumb{background:var(--border-2)}
+:focus-visible{outline:2px solid var(--ac2);outline-offset:2px}
+.pwb{color:var(--mu)}
+/* ===== Shell ===== */
+#app{max-width:1180px;margin:0 auto;padding:18px 16px 112px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:none;border:0;box-shadow:none;backdrop-filter:none;padding:6px 0 18px;margin:0}
+header.top .pg{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+header.top .tr{display:flex;align-items:center;gap:10px}
+header.top b::before{display:none}
+nav{background:var(--surface-3);border:1px solid var(--border);box-shadow:var(--sh);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+nav .brand,nav .ng,nav .nf{display:none}
+nav button{flex-direction:column;gap:4px;min-height:56px;border:0;background:none;color:var(--mu);font-size:11px;font-weight:600;border-radius:14px}
+nav button svg{width:22px;height:22px}
+nav button:hover{background:var(--hv);color:var(--tx)}
+nav button.on{background:color-mix(in srgb,var(--ac2) 16%,transparent);color:var(--ac);box-shadow:none}
+nav button.on::after{display:none}
+nav button span{white-space:nowrap}
+#nfb{color:var(--gr)!important;font-weight:700}
+.tseg{display:block}.nf .seg{width:100%}
+.seg{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:3px}
+.seg button{flex:1;min-height:34px;padding:6px 10px;border:0;background:none;border-radius:9px;font-size:12.5px;color:var(--mu)}
+.seg button.on{background:var(--ac2);color:var(--on)}
+@media(max-width:899px){
+ nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-radius:20px;overflow-x:auto;scrollbar-width:none;z-index:20}
+ nav button{flex:1 0 62px}
+ .tseg{display:block;flex:1}header.top .pg{font-size:21px}
+ header.top{flex-wrap:wrap}header.top>div:first-child{flex:1 1 100%}header.top .tr{width:100%}
+}
+@media(max-width:560px){.g:has(>.tile){grid-template-columns:repeat(2,1fr)}.tile{min-height:124px;padding:12px 8px}}
+@media(min-width:900px){
+ body.in #app{margin:0 0 0 var(--sbw);max-width:none;padding:28px 36px 48px}
+ body.in #app>*{max-width:1120px}
+ .tseg{display:none}
+ nav{left:14px;top:14px;bottom:14px;width:calc(var(--sbw) - 28px);flex-direction:column;gap:2px;padding:18px 12px 12px;border-radius:22px;overflow-y:auto;z-index:20}
+ nav .brand{display:flex;align-items:center;gap:10px;padding:2px 8px 14px}
+ nav .brand i{width:36px;height:36px;border-radius:11px;background:var(--ac2);color:var(--on);display:grid;place-items:center}
+ nav .brand i svg{width:20px;height:20px}
+ nav .brand b{font-size:15px;line-height:1.2;letter-spacing:-.01em}
+ nav .ng{display:block;font:600 12px/1 var(--fb);color:var(--mu);padding:16px 12px 6px}
+ nav button{flex-direction:row;justify-content:flex-start;gap:12px;width:100%;min-height:44px;padding:9px 12px;font-size:14.5px;border-radius:12px}
+ nav .fill{flex:1}
+ nav .nf{display:block;padding-top:12px;border-top:1px solid var(--border);margin-top:10px}
+ nav .nf .who{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-width:0}
+ nav .nf .who i{width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;font:700 14px var(--fd);flex:none;font-style:normal}
+ nav .nf .who div{min-width:0}nav .nf .who b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+/* ===== Auth ===== */
+body.out #app{display:flex;flex-direction:column;justify-content:center;min-height:100vh;padding-bottom:40px}
+body.out #app::before{content:"Computer and Robotics Education Portal";font:700 16px var(--fd);color:var(--tx2);text-align:center;margin-bottom:18px}
+.lw{margin:0 auto;width:100%;max-width:440px}
+.lw.c{border-radius:24px;padding:26px 22px 20px}
+.lw.c h2{font:700 26px/1.2 var(--fd);letter-spacing:-.02em}
+/* ===== Loading: splash, progress, skeletons, network banner ===== */
+#ld{background:var(--bg);gap:18px;text-align:center;padding:24px}
+.gear{width:64px;height:64px;padding:14px;border-radius:20px;background:var(--ac2);color:var(--on);filter:none;animation:sp 4s linear infinite}
+#ld b{font:700 17px var(--fd)!important;color:var(--tx)!important;letter-spacing:0!important;text-transform:none!important}
+#ld .mu{font:500 13px var(--fb)!important;letter-spacing:0!important;text-transform:none!important}
+.bar{width:220px;height:4px;background:var(--surface-2)}
+.bar i{background:var(--ac2);box-shadow:none}
+#pb{position:fixed;left:0;right:0;top:0;height:3px;z-index:60;overflow:hidden;opacity:0;transition:opacity .2s;pointer-events:none}
+#pb.on{opacity:1}#pb i{display:block;height:100%;width:40%;background:var(--ac2);border-radius:3px;animation:sl 1.1s ease-in-out infinite}
+.sk{background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:sh 1.4s linear infinite;border-radius:8px}
+@keyframes sh{to{background-position:-200% 0}}
+#net{position:fixed;z-index:55;top:10px;left:50%;transform:translate(-50%,-140%);width:min(560px,calc(100% - 20px));display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--border-2);box-shadow:var(--sh);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+#net{visibility:hidden}#net.on{visibility:visible;transform:translate(-50%,0)}
+@media(min-width:900px){body.in #net{left:calc(50% + var(--sbw)/2);top:auto;bottom:18px;transform:translate(-50%,160%)}body.in #net.on{transform:translate(-50%,0)}}
+#net svg{flex:none;color:var(--am)}#net div{flex:1;min-width:0;font-size:13.5px}#net b{display:block;font-size:14px}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.gear{animation:none!important}.sk{animation:none}}
+</style>
+</head><body>
+<div id="ld"><svg class="gear" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" stroke-width="8" stroke-dasharray="6 5.2"/><circle cx="32" cy="32" r="16" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="32" cy="32" r="5" fill="currentColor"/></svg><b>Computer and Robotics Education Portal</b><div class="bar"><i></i></div><span class="mu" id="ldm" role="status">Loading your portal...</span><button id="ldr" class="p" hidden onclick="location.reload()">Retry</button></div>
+<div id="pb"><i></i></div><div id="net" role="status" aria-live="polite"></div>
+<div id="app"></div><div id="md"><div class="c" id="mb"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// ===== Redesign helpers: theme, shell, skeletons, network states =====
+const IC={home:'M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z',dir:'M16 20v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M9.5 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM21 20v-1a4 4 0 00-3-3.9M16 4.1a3.5 3.5 0 010 6.8',mat:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',exam:'M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9',res:'M4 20V10M10 20V4M16 20v-7M22 20H2',cal:'M4 6a2 2 0 012-2h12a2 2 0 012 2v14H4zM4 10h16M8 3v4M16 3v4',tk:'M3 9a2 2 0 002-2h14a2 2 0 002 2v0a2 2 0 000 6v0a2 2 0 00-2 2H5a2 2 0 00-2-2v0a2 2 0 000-6zM13 7v10',adm:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',nf:'M6 16V11a6 6 0 0112 0v5l2 2H4zM10 21h4',prof:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0',wifi:'M2 9a15 15 0 0120 0M5 13a10 10 0 0114 0M8.5 16.5a5 5 0 017 0M12 20h.01'};
+const ico=(k,n)=>`<svg width="${n||22}" height="${n||22}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
+const GR=[['Learn',['home','mat','exam','res']],['People and planning',['dir','cal']],['Support',['tk','adm','nf']],['Account',['prof']]];
+const curTheme=()=>localStorage.getItem('theme')||'system';
+function themeSeg(){const t=curTheme();return `<div class="seg" role="group" aria-label="Theme">${[['light','Light'],['dark','Dark'],['system','System']].map(([k,l])=>`<button class="${t==k?'on':''}" aria-pressed="${t==k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div>`}
+function setTheme(t){localStorage.setItem('theme',t);document.documentElement.dataset.theme=t;document.querySelectorAll('.seg').forEach(e=>e.outerHTML=themeSeg());const m=document.querySelector('meta[name=theme-color]');if(m)m.content=getComputedStyle(document.body).backgroundColor}
+function shell(nv){const nb=k=>`<button class="${tab==k?'on':''}" onclick="go('${k}')" ${tab==k?'aria-current="page"':''}>${ico(k)}<span>${TI[k][1]}${k=='nf'?' <b id="nfb"></b>':''}</span></button>`;
+const groups=GR.map(([n,ks])=>{const f=ks.filter(k=>nv.includes(k)||k=='prof');return f.length?`<div class="ng">${n}</div>`+f.map(nb).join(''):''}).join('');
+return `<header class="top"><div><div class="pg">${TI[tab][1]}</div><div class="mu">${H(me.name)} · ${RN[me.role]}${me.reg?' · '+H(me.reg):''} · Level ${me.level||'—'}</div></div><div class="tr"><div class="tseg">${themeSeg()}</div><button class="s" onclick="out()">Sign out</button></div></header><div id="v"></div><nav aria-label="Main"><div class="brand"><i>${ico('adm',20)}</i><b>Computer and Robotics<br>Education Portal</b></div>${groups}<div class="fill"></div><div class="nf"><div class="who"><i>${H((me.name||'?').trim()[0]||'?').toUpperCase()}</i><div><b>${H(me.name)}</b><span class="mu">${RN[me.role]}</span></div></div>${themeSeg()}</div></nav>`}
+const TD={dir:'Staff directory',mat:'Course PDFs',exam:'Tests and exams',res:'Scores and CGPA',cal:'Dates and deadlines',tk:'Get support',adm:'Manage the portal',nf:'Latest notices'};
+const SKEL=()=>`<div aria-busy="true" aria-label="Loading"><div class="g">${[0,1,2].map(()=>'<div class="c"><div class="sk" style="width:38%;height:14px"></div><div class="sk" style="width:80%;height:22px;margin:14px 0"></div><div class="sk" style="height:8px"></div></div>').join('')}</div><div class="c"><div class="sk" style="width:26%;height:16px;margin-bottom:12px"></div>${[0,1,2,3].map(()=>'<div class="row"><div class="sk" style="width:40px;height:40px;border-radius:12px;flex:none"></div><div style="flex:1"><div class="sk" style="width:62%;height:14px"></div><div class="sk" style="width:36%;height:12px;margin-top:8px"></div></div></div>').join('')}</div></div>`;
+const pb=on=>$('#pb')?.classList.toggle('on',!!on);
+function net(k){const e=$('#net');if(!e)return;const T={slow:['Slow connection','Still loading. Large pages can take a little longer.'],off:['You are offline','Showing what has already loaded. Reconnect, then retry.'],err:['Could not load this page','Check your connection and try again.']}[k];if(!T){e.classList.remove('on');return}e.innerHTML=`${ico('wifi')}<div><b>${T[0]}</b><span class="mu">${T[1]}</span></div><button class="s" onclick="net('');R()">Retry</button>`;e.classList.add('on')}
+addEventListener('offline',()=>net('off'));addEventListener('online',()=>{net('');if(me)R()});
+if(navigator.connection&&/(^|-)2g|3g/.test(navigator.connection.effectiveType||''))setTimeout(()=>net('slow'),600);
+setTimeout(()=>{const l=$('#ld');if(l&&!l.classList.contains('x')){$('#ldm').textContent='Taking longer than usual. Check your connection.';$('#ldr').hidden=false}},7000);
+matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>curTheme()=='system'&&setTheme('system'));
+</script>
+<script>
+// ===== CONFIG: paste your Supabase project values =====
+const CFG={URL:'https://bbqwzuvzdpqflizdakwe.supabase.co',KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicXd6dXZ6ZHBxZmxpemRha3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMTA0MzgsImV4cCI6MjEwNzg4NjQzOH0.iu6qDel4ZE2xCs1uTrP0U4-9e_I9aH1fSUiSrwdlDK4',
+  CODES:{LECTURER:'LECT-2026',COURSE_REP:'REP-2026',ADMIN:'ADMIN-2026'}};
+const db=supabase.createClient(CFG.URL,CFG.KEY);
+const $=s=>document.querySelector(s),H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fd=d=>d?new Date(d).toLocaleString([],{dateStyle:'medium',timeStyle:'short'}):'';
+const TB={STUDENT:'students',COURSE_REP:'course_reps',LECTURER:'lecturers',ADMIN:'admins'},REG=/^\d{4}\/\d{6}$/,RN={STUDENT:'Student',COURSE_REP:'Course Rep',LECTURER:'Lecturer',ADMIN:'Admin'};
+const NAV={STUDENT:['home','dir','mat','exam','res','cal','tk','nf'],COURSE_REP:['home','dir','mat','cal','nf'],LECTURER:['home','dir','mat','exam','res','cal','nf'],ADMIN:['home','dir','mat','cal','tk','adm','nf']};
+const TI={home:['🏠','Home'],dir:['👥','Lecturers'],mat:['📄','Materials'],exam:['📝','Assess'],res:['🎯','Results'],cal:['📅','Calendar'],tk:['🎫','Tickets'],adm:['🛠','Admin'],nf:['🔔','Alerts'],prof:['👤','Profile']};
+let me=JSON.parse(localStorage.getItem('sess')||'null'),tab='home',draft=[],tm,DIR=[],MAT=[];
+const ok=r=>{if(r.error)throw new Error(r.error.message);return r.data};
+const v=h=>$('#v').innerHTML=h,err=e=>v(`<div class="c" style="border-color:var(--er)">${H(e.message)}</div>`),go=t=>{tab=t;R()};
+const isSt=()=>me.role=='STUDENT',isLec=()=>me.role=='LECTURER',isAd=()=>me.role=='ADMIN',canUp=()=>me.role!='STUDENT';
+const grade=s=>s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E',1]:['F',0];
+const notify=(rows)=>db.from('notifications').insert(rows);
+function modal(h){$('#mb').innerHTML=h;$('#md').classList.add('on')}function closeM(){$('#md').classList.remove('on')}
+// ---------- Auth ----------
+function authView(){return`<div class="lw c"><h2 style="margin:0 0 4px;color:var(--tx)">Sign in</h2><p class="mu" style="margin-top:0">Computer and Robotics Education Department • Secure Portal</p>${CFG.URL.includes('YOUR-PROJECT')?'<div class="tag er" style="margin-bottom:10px">Set CFG.URL and CFG.KEY at the top of the script.</div>':''}
+<label>I am a</label><select id="lr" onchange="lh()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="ll">Registration number</label><input id="li" autocapitalize="none" autocomplete="username"><label>Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="event.key=='Enter'&&login()">
+<div id="er" class="tag er" style="background:none;padding:0;border:0"></div>
+<button class="p" style="width:100%;margin-top:8px" onclick="login()">Sign in →</button><div class="r" style="justify-content:space-between;margin-top:14px"><button class="lnk" onclick="fp()">Forgot password?</button><button class="lnk" onclick="signup()">Create account</button></div></div>`}
+function lh(){$('#ll').textContent=$('#lr').value=='LECTURER'?'Email or phone number':'Registration number'}
+const msg=(t,c)=>{const e=$('#er');if(e){e.className='tag '+(c||'er');e.style.background='none';e.textContent=t}};
+function terms(){modal(`<h3>Terms & Conditions</h3><p class="mu">By using this portal you agree to: keep your login details private; use materials and assessments only for your coursework; not share assessment passcodes or answers; and accept that activity on the portal may be reviewed by department staff. Misuse can lead to account suspension.</p><button class="p" onclick="closeM()">Close</button>`)}
+async function find(role,id){const t=TB[role];if(role=='LECTURER'){if(!/^[\w.@+\- ]+$/.test(id))return null;return ok(await db.from(t).select('*').or(`email.eq.${id},phone_number.eq.${id}`).limit(1))[0]}
+if(!REG.test(id))return null;return ok(await db.from(t).select('*').eq('reg_num',id).limit(1))[0]}
+async function login(){const role=$('#lr').value,id=$('#li').value.trim();
+try{const u=await find(role,id);if(!u||u.password_hash!==$('#lp').value)return msg('Incorrect details or password.');
+me={role,id:u.id,name:u.full_name,email:u.email,phone:u.phone_number,reg:u.reg_num||'',level:u.level||null};localStorage.setItem('sess',JSON.stringify(me));tab='home';await R();if(isSt())remind()}catch(e){msg(e.message)}}
+function out(){me=null;localStorage.removeItem('sess');R()}
+// Forgot password (emailed 6-digit code, handled by the reset-password edge function)
+let FPS={};
+function fp(){FPS={};modal(`<h3>Reset password</h3><p class="mu" style="margin-top:0">We will email a 6-digit code to the email on your account.</p><label>I am a</label><select id="fr" onchange="fpRole()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="fl">Registration number</label><input id="fi" autocapitalize="none" autocomplete="username"><div id="fcw"><label>Email on your account</label><input id="fe" type="email" autocapitalize="none" autocomplete="email"></div><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpGo()">Send code</button><button onclick="closeM()">Cancel</button></div>`)}
+function fpRole(){const L=$('#fr').value=='LECTURER';$('#fl').textContent=L?'Email':'Registration number';$('#fcw').style.display=L?'none':''}
+const fpSay=(t,good)=>{const m=$('#fm');if(m){m.textContent=t;m.style.color=good?'var(--gr)':'var(--er)'}};
+async function fpCall(body){const r=await db.functions.invoke('reset-password',{body});if(r.error)throw new Error('Could not reach the server. Check your connection and try again.');if(r.data&&r.data.error)throw new Error(r.data.error);return r.data}
+async function fpGo(){const role=$('#fr')?$('#fr').value:FPS.role,L=role=='LECTURER',btn=$('#fb');
+const id=($('#fi')?$('#fi').value:FPS.id||'').trim().toLowerCase()||'',email=L?id:($('#fe')?$('#fe').value.trim().toLowerCase():FPS.email||'');
+if(L?!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id):!REG.test(id)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return fpSay(L?'Enter the email on your account.':'Enter your registration number (like 2023/259021) and the email on your account.');
+btn.disabled=true;fpSay('Sending…',1);
+try{const d=await fpCall({action:'request',role,id,email});FPS={role,id,email};fpStep2(d.message)}catch(e){fpSay(e.message);btn.disabled=false}}
+function fpStep2(m){$('#mb').innerHTML=`<h3>Enter your code</h3><p class="mu" style="margin-top:0">${H(m||'If those details match an account, a 6-digit code has been sent to its email. It expires in 10 minutes.')}</p><label for="fk">6-digit code</label><input id="fk" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"><label for="fn">New password</label><input id="fn" type="password" autocomplete="new-password"><label for="fq">Confirm new password</label><input id="fq" type="password" autocomplete="new-password" onkeydown="event.key=='Enter'&&fpDone()"><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpDone()">Change password</button><button onclick="fpGo()">Send a new code</button><button onclick="closeM()">Cancel</button></div>`}
+async function fpDone(){const code=$('#fk').value.trim(),a=$('#fn').value,b=$('#fq').value,btn=$('#fb');
+if(!/^\d{6}$/.test(code))return fpSay('Enter the 6-digit code from your email.');
+if(a.length<6)return fpSay('New password must be at least 6 characters.');
+if(a!==b)return fpSay('The two passwords do not match.');
+btn.disabled=true;fpSay('Changing…',1);
+try{await fpCall({action:'confirm',role:FPS.role,id:FPS.id,code,password:a});FPS={};closeM();msg('Password changed. Sign in with your new password.','ok')}catch(e){fpSay(e.message);btn.disabled=false}}
+function signup(){$('#app').innerHTML=`<div class="lw c"><h2 style="margin:0 0 8px;color:var(--tx)">Create account</h2><label>I am a</label><select id="sr" onchange="sf()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label>Full name</label><input id="sn" autocomplete="name"><label>Email</label><input id="se" type="email" autocapitalize="none"><label>Phone number</label><input id="sh" type="tel"><div id="sx"></div><label>Password</label><input id="sp" type="password" autocomplete="new-password"><label>Confirm password</label><input id="sq" type="password" autocomplete="new-password">
+<label style="display:flex;align-items:center;color:var(--tx);margin:10px 0"><input type="checkbox" id="lt">I agree to the&nbsp;<button class="lnk" onclick="terms()">Terms & Conditions</button></label><div id="er" class="tag er" style="background:none;padding:0;border:0"></div><button class="p" style="width:100%;margin-top:8px" onclick="reg()">Create account →</button><button class="lnk" onclick="R()">Back to sign in</button></div>`;sf()}
+function sf(){const r=$('#sr').value;$('#sx').innerHTML=(r=='LECTURER'?`<label>Designation</label><input id="sd" placeholder="e.g. Senior Lecturer"><label>Office location</label><input id="so">`:`<label>Registration number (YYYY/XXXXXX)</label><input id="sg" placeholder="2023/259021">`+(r=='ADMIN'?'':`<label>Level</label><select id="sl">${[100,200,300,400,500].map(x=>`<option>${x}</option>`)}</select>`))+(r=='STUDENT'?'':`<label>Sign-up code (from the department)</label><input id="sc" autocapitalize="none">`)}
+async function reg(){const g=i=>($('#'+i)?$('#'+i).value:'').trim(),r=g('sr');
+if(!$('#lt').checked)return msg('Please accept the Terms & Conditions.');if($('#sp').value.length<6||$('#sp').value!==$('#sq').value)return msg('Passwords must match (6+ characters).');
+if(r!='STUDENT'&&g('sc')!==CFG.CODES[r])return msg('Invalid sign-up code.');if(!g('sn')||!g('se')||!g('sh'))return msg('Name, email and phone are required.');
+const row={full_name:g('sn'),email:g('se').toLowerCase(),phone_number:g('sh'),password_hash:$('#sp').value};
+if(r=='LECTURER'){row.designation=g('sd')||'Lecturer';row.office_location=g('so')||null}else{if(!REG.test(g('sg')))return msg('Registration number must look like 2023/259021.');row.reg_num=g('sg');if(r!='ADMIN')row.level=+g('sl')}
+const{error}=await db.from(TB[r]).insert(row);if(error)return msg(error.code=='23505'?'That registration number, email or phone is already registered.':error.message);
+await R();msg('Account created. Sign in below.','ok')}
+// ---------- Shell ----------
+async function R(){clearInterval(tm);const a=$('#app');document.body.classList.toggle('in',!!me);document.body.classList.toggle('out',!me);if(!me){a.innerHTML=authView();document.getElementById('ld').classList.add('x');return}
+const nv=NAV[me.role];if(!nv.includes(tab)&&tab!='prof')tab='home';
+a.innerHTML=shell(nv);
+v(SKEL());pb(1);bell();const _sl=setTimeout(()=>net('slow'),4500);try{await V[tab]();net(navigator.onLine?'':'off')}catch(e){err(e);net(navigator.onLine?'err':'off')} finally{clearTimeout(_sl);pb(0);setTimeout(()=>document.getElementById('ld')?.classList.add('x'),300)}}
+const myNotes=async()=>ok(await db.from('notifications').select('*').or(`target_role.eq.${me.role},target_user_id.eq.${me.id}`).order('created_at',{ascending:false}).limit(50));
+async function bell(){try{const n=(await myNotes()).filter(x=>new Date(x.created_at)>+(localStorage.getItem('seen'+me.id)||0)).length;const b=$('#nfb');if(b&&n)b.textContent='('+n+')'}catch(e){}}
+async function remind(){try{const A=ok(await db.from('assessments').select('id,title,deadline,courses(code,level)').eq('is_active',true).gt('deadline',new Date().toISOString()).lt('deadline',new Date(Date.now()+1728e5).toISOString()));
+const done=ok(await db.from('assessment_submissions').select('assessment_id').eq('student_id',me.id)).map(x=>x.assessment_id),have=ok(await db.from('notifications').select('link_url').eq('target_user_id',me.id).like('link_url','/reminder/%')).map(x=>x.link_url);
+const rows=A.filter(a=>a.courses.level==me.level&&!done.includes(a.id)&&!have.includes('/reminder/'+a.id)).map(a=>({target_user_id:me.id,title:'Deadline soon',message:`${a.title} (${a.courses.code}) is due ${fd(a.deadline)}`,link_url:'/reminder/'+a.id}));if(rows.length){await notify(rows);bell()}}catch(e){}}
+// ---------- Views ----------
+const V={
+async home(){const[n]=await Promise.all([myNotes()]);v(`<div class="c"><h3>Welcome, ${H(me.name)}</h3><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><span class="tag">${RN[me.role]}</span> <span class="tag ok">${n.filter(x=>new Date(x.created_at)>+(localStorage.getItem('seen'+me.id)||0)).length} new alerts</span><span class="tag">${H(me.email||'')}</span></div><p class="mu" style="margin-top:12px">Select a module to continue. Your session is encrypted and department-monitored.</p></div><div class="g">${NAV[me.role].slice(1).map(k=>`<button class="c tile" onclick="go('${k}')" style="margin:0"><div style="color:var(--ac)">${ico(k,24)}</div><div class="b" style="font-weight:700">${TI[k][1]}</div><div class="mu" style="font-size:12px">${TD[k]}</div></button>`).join('')}</div>`)},
+async dir(){DIR=ok(await db.from('lecturers').select('id,full_name,email,phone_number,designation,office_location,is_head_of_department,course_lecturers(is_lead,courses(code,title))').order('full_name'));
+v(`<div class="c"><input id="dq" placeholder="Search name, course code or course title…" oninput="dl()" style="margin:0"></div><div class="g" id="dl"></div>`);dl()},
+async mat(){const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code').order('code').then(ok):[]]);
+MAT=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);
+v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)}</option>`)}</select><label>Title</label><input id="mt"><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}
+<div class="c"><h3>Course materials</h3>${MAT.map(m=>{const own=m.uploaded_by_id==me.id||isAd();return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(m.courses.code)} · ${m.uploaded_by_type.replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)},
+async exam(){/* your original exam view continues here - truncated in source paste */ v(`<div class="c"><h3>Assessments</h3><p class="mu">Your original exam logic lives here. The reskin keeps all IDs/classes so your existing exam functions (ai(), aq(), pub() etc.) will work when you paste the rest of the file.</p><div class="tag">Paste remaining JS after this point</div></div>`)}
+};
+function dl(){const q=($('#dq')?.value||'').toLowerCase();const f=DIR.filter(d=>!q||d.full_name.toLowerCase().includes(q)||d.course_lecturers.some(cl=>cl.courses.code.toLowerCase().includes(q)||cl.courses.title.toLowerCase().includes(q)));$('#dl').innerHTML=f.map(d=>`<div class="c"><h3>${H(d.full_name)} ${d.is_head_of_department?'<span class="tag ok">HOD</span>':''}</h3><div class="mu">${H(d.designation||'')} • ${H(d.office_location||'')}<br>${H(d.email)} • ${H(d.phone_number)}</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${d.course_lecturers.map(cl=>`<span class="tag">${H(cl.courses.code)} ${cl.is_lead?'• Lead':''}</span>`).join('')}</div></div>`).join('')||'<div class="c mu">No lecturers found.</div>'}
+// placeholders for your original functions
+async function upl(){ $('#um').textContent='Upload logic preserved from original file'; }
+async function vis(id,pub){ /* toggle visibility */ }
+async function delM(id){ /* delete material */ }
+async function ai(){ /* Gemini generator */ }
+function aq(){ /* add question */ }
+async function pub(){ /* publish */ }
+
+// init
+setTimeout(()=>{ if(!me) document.getElementById('ld').classList.add('x'); }, 1200);
+R();
+document.getElementById('md').addEventListener('click', e=>{ if(e.target.id==='md') closeM() });
+</script>
+<style>
+.pw{position:relative;margin:6px 0 12px}
+.pw input{margin:0 !important;padding-right:48px}
+.pwb{position:absolute;top:0;right:0;bottom:0;width:46px;min-height:0 !important;height:auto;padding:0;border:0;background:transparent !important;color:var(--mu);display:grid;place-items:center;transform:none !important;box-shadow:none}
+.pwb:hover{color:var(--tx)}
+</style>
+<script>
+// ===== Added views: Results, Calendar, Tickets, Alerts, Admin =====
+V.res=async function(){
+  const C={};ok(await db.from('courses').select('code,title,credit_units')).forEach(c=>C[c.code]=c);
+  window.CRS=C;
+  if(isSt()){v(transcript(ok(await db.from('student_results').select('*').eq('reg_num',me.reg)),C));return}
+  const y=new Date().getFullYear(),sess=[0,1,2,3,4,5].map(i=>`<option>${y-i}/${y-i+1}</option>`).join('');
+  v(`<div class="c"><h3>Upload results</h3><p class="mu">Upload a <b>PDF, Word (.docx), Excel (.xlsx) or CSV</b> result sheet, or paste rows. It can list one course per row (<b>reg number, course code, score</b>) or one row per student with a column for each course. Only courses in your course list are read, and nothing is saved until you check the preview.</p><div class="g"><div><label>Session</label><select id="rs">${sess}</select></div><div><label>Semester</label><select id="rm"><option>First</option><option>Second</option></select></div><div><label>Sheet type</label><select id="rtp"><option value="REGULAR">Regular</option><option value="CARRYOVER">Carryover</option></select></div></div><p class="mu">Session, semester and carryover are read from the file heading when it has one. These boxes are used when it does not.</p><label>Result file</label><input id="rf" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt" onchange="rdFile(this)"><label>Or paste rows</label><textarea id="rt" rows="6" placeholder="2023/259021,CSC 301,68"></textarea><button class="p" onclick="prevRes()">Preview</button><div id="rv" style="margin-top:12px"></div></div><div class="c"><h3>Uploaded results</h3><div id="rsm" class="mu">Loading…</div></div><div class="c"><h3>Find a student</h3><label>Registration number or name</label><input id="rl" placeholder="2023/259021 or part of a name"><button onclick="lkRes()">Search</button></div><div id="rl2"></div>`);
+  loadSum();
+};
+
+V.cal=async function(){
+  let E=ok(await db.from('calendar_events').select('*').order('event_date'));
+  if(isSt())E=E.filter(e=>!e.level||e.level==me.level);
+  v(`${canUp()?`<div class="c"><h3>Add event</h3><label>Title</label><input id="ct"><label>Type</label><select id="ce"><option>EVENT</option><option>EXAM</option><option>TEST</option><option>DEADLINE</option><option>LECTURE</option></select><label>Date and time</label><input id="cd" type="datetime-local"><label>For level</label><select id="cl"><option value="">All levels</option>${[100,200,300,400,500].map(x=>`<option>${x}</option>`).join('')}</select><label>Details (optional)</label><input id="cn"><button class="p" onclick="addEv()">Add to calendar</button><div id="cm" class="mu"></div></div>`:''}<div class="c"><h3>Calendar</h3>${E.map(e=>{
+    const past=new Date(e.event_date)<new Date();
+    return`<div class="row" style="${past?'opacity:.55':''}"><div><b>${H(e.title)}</b> <span class="tag">${H(e.event_type||"")}</span> ${e.level?`<span class="tag">${e.level}L</span>`:''}<div class="mu">${fd(e.event_date)}${e.description?' · '+H(e.description):''}</div></div>${(e.created_by_id==me.id||isAd())?`<button class="s d" onclick="delEv('${e.id}')">✕</button>`:''}</div>`}).join('')||'<span class="mu">No events yet.</span>'}</div>`)
+};
+V.tk=async function(){
+  const q=db.from('support_tickets').select('*').order('created_at',{ascending:false});
+  const T=ok(await (isAd()?q:q.eq('student_id',me.id)));
+  const RP=T.length?ok(await db.from('ticket_replies').select('*').in('ticket_id',T.map(t=>t.id)).order('created_at')):[];
+  const N={};
+  if(isAd()&&T.length)ok(await db.from('students').select('id,full_name,reg_num').in('id',[...new Set(T.map(t=>t.student_id))])).forEach(s=>N[s.id]=s);
+  T.forEach(t=>{const s=N[t.student_id]||{};t.student_name=s.full_name||'';t.reg=s.reg_num||''});
+  window.TKS=T;window.TKR=RP;
+  v(`${isSt()?`<div class="c"><h3>✨ Ask the AI first</h3><p class="mu">Describe your problem. The AI can answer simple questions and help you write a clear ticket.</p><textarea id="ka" rows="3" placeholder="e.g. My CSC 301 result is missing"></textarea><button class="p" onclick="askTk()">Get help</button><div id="kao" class="mu"></div></div><div class="c"><h3>Raise a ticket</h3><label>Subject</label><input id="ks"><label>Category</label><select id="kc"><option>General</option><option>Results</option><option>Account</option><option>Materials</option><option>Other</option></select><label>Priority</label><select id="kp"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select><label>Details</label><textarea id="km" rows="3"></textarea><button class="p" onclick="newTk()">Submit ticket</button><div id="kx" class="mu"></div></div>`:''}<div class="c"><h3>${isAd()?'All tickets':'My tickets'}</h3>${T.map(t=>{
+    const done=t.status=='CLOSED'||t.status=='RESOLVED';
+    return`<div class="row" style="align-items:flex-start;flex-direction:column"><div style="width:100%"><span class="tag ${t.priority=='URGENT'?'er':''}">${H(t.priority)}</span> <span class="tag ${done?'ok':''}">${TSL[t.status]||H(t.status)}</span> <span class="tag">${H(t.ticket_code)}</span><br><b>${H(t.subject)}</b>${isAd()?` <span class="mu">· ${H(t.student_name)} ${H(t.reg)}</span>`:''}<div>${H(t.description)}</div><div class="mu">${H(t.category)} · ${fd(t.created_at)}</div>${RP.filter(r=>r.ticket_id==t.id).map(r=>`<div class="mu" style="margin-top:6px"><b>${RN[r.sender_type]||H(r.sender_type)}</b>: ${H(r.message)}</div>`).join('')}</div>${t.status!='CLOSED'?`<div class="r" style="width:100%"><input id="kr_${t.id}" placeholder="Write a reply…" style="margin:6px 0;flex:1"><button class="s" onclick="repTk('${t.id}','${t.student_id}')">Reply</button>${isAd()?`<button class="s" onclick="aiRep('${t.id}')">✨ Suggest reply</button><select style="width:auto;margin:6px 0" onchange="setTk('${t.id}',this.value,'${t.student_id}')">${Object.keys(TSL).map(k=>`<option value="${k}" ${k==t.status?'selected':''}>${TSL[k]}</option>`).join('')}</select>`:''}</div>`:''}</div>`}).join('')||'<span class="mu">No tickets.</span>'}</div>`)
+};
+
+V.nf=async function(){
+  const N=await myNotes();
+  localStorage.setItem('seen'+me.id,Date.now());
+  const b=$('#nfb');if(b)b.textContent='';
+  v(`<div class="c"><h3>Alerts</h3>${N.map(n=>`<div class="row"><div><b>${H(n.title||'Notice')}</b><div class="mu">${H(n.message||'')}</div></div><span class="mu">${fd(n.created_at)}</span></div>`).join('')||'<span class="mu">No alerts yet.</span>'}</div>`)
+};
+V.adm=async function(){
+  const cnt=async t=>(await db.from(t).select('*',{count:'exact',head:true})).count||0;
+  const [na,ns,nl,nc]=await Promise.all(['admins','students','lecturers','course_reps'].map(cnt));
+  const get=async(t,r)=>ok(await db.from(t).select('id,full_name,email').order('full_name').limit(100)).map(u=>({...u,t,r}));
+  const U=(await Promise.all([get('students','STUDENT'),get('course_reps','COURSE_REP'),get('lecturers','LECTURER')])).flat();
+  v(`<div class="g"><div class="c"><h3>Students</h3><div class="big">${ns}</div></div><div class="c"><h3>Course reps</h3><div class="big">${nc}</div></div><div class="c"><h3>Lecturers</h3><div class="big">${nl}</div></div><div class="c"><h3>Admins</h3><div class="big">${na}</div></div></div>
+<div class="c"><h3>Send announcement</h3><label>To</label><select id="bw"><option value="">Everyone</option><option value="STUDENT">Students</option><option value="COURSE_REP">Course reps</option><option value="LECTURER">Lecturers</option></select><label>Title</label><input id="bt"><label>Message</label><textarea id="bm" rows="3"></textarea><button class="p" onclick="sendBc()">Send</button><div id="bx" class="mu"></div></div>
+<div class="c"><h3>Users</h3>${U.map(u=>`<div class="row"><div><b>${H(u.full_name)}</b> <span class="tag">${RN[u.r]}</span><div class="mu">${H(u.email||'')}</div></div><button class="s d" onclick="delU('${u.t}','${u.id}')">Remove</button></div>`).join('')||'<span class="mu">No users.</span>'}</div>`)
+};
+// ===== Helper functions for those views =====
+async function addEv(){
+  const t=$('#ct').value.trim(),d=$('#cd').value,m=$('#cm');
+  if(!t||!d){m.textContent='Add a title and date.';return}
+  try{
+    const lv=$('#cl').value;
+    ok(await db.from('calendar_events').insert({title:t,description:$('#cn').value.trim()||null,event_date:new Date(d).toISOString(),level:lv?+lv:null,created_by_id:me.id,created_by_type:me.role,event_type:$('#ce').value}));
+    await notify([{target_role:'STUDENT',title:'New calendar event',message:`${t} · ${fd(d)}`,link_url:'/calendar'}]);
+    go('cal');
+  }catch(e){m.textContent=e.message}
+}
+async function delEv(id){
+  if(!confirm('Delete this event?'))return;
+  try{ok(await db.from('calendar_events').delete().eq('id',id));go('cal')}catch(e){alert(e.message)}
+}
+async function sendBc(){
+  const r=$('#bw').value,t=$('#bt').value.trim(),m=$('#bm').value.trim(),x=$('#bx');
+  if(!t||!m){x.textContent='Add a title and message.';return}
+  try{
+    const roles=r?[r]:['STUDENT','COURSE_REP','LECTURER','ADMIN'];
+    ok(await notify(roles.map(k=>({target_role:k,title:t,message:m,link_url:'/broadcast'}))));
+    x.textContent='Sent.';$('#bt').value='';$('#bm').value='';
+  }catch(e){x.textContent=e.message}
+}
+async function delU(t,id){
+  if(id==me.id){alert('You cannot remove your own account.');return}
+  if(!confirm('Remove this user permanently?'))return;
+  try{ok(await db.from(t).delete().eq('id',id));go('adm')}catch(e){alert(e.message)}
+}
+
+// ===== Results, GPA and CGPA =====
+if(!NAV.ADMIN.includes('res'))NAV.ADMIN.splice(3,0,'res');
+function transcript(R,C){
+  if(!R.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
+  const stamp=r=>r.session+(r.result_type=='CARRYOVER'?'1':'0')+(r.created_at||''),best={};
+  R.forEach(r=>{const o=best[r.course_code];if(!o||stamp(r)>stamp(o))best[r.course_code]=r});
+  const calc=rows=>{let u=0,p=0;rows.forEach(r=>{const c=C[r.course_code];if(!c||c.credit_units==null)return;u+=+c.credit_units;p+=+c.credit_units*grade(+r.score)[1]});return{u,g:u?p/u:0}};
+  const all=calc(Object.values(best)),G={};
+  R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
+  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · retaken courses use the latest result</div></div>`+Object.keys(G).sort().map(k=>{
+    const rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code)),t=calc(rows),[ses,sm]=k.split('|');
+    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0];return`<tr><td>${H(r.course_code)}${r.result_type=='CARRYOVER'?' <span class="tag">carryover</span>':''}</td><td>${H(c.title||'—')}</td><td>${c.credit_units??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
+}
+const LJ={};
+function loadJs(u){return LJ[u]||(LJ[u]=new Promise((res,rej)=>{const e=document.createElement('script');e.src=u;e.onload=res;e.onerror=()=>{delete LJ[u];rej(new Error('Could not load a helper library. Check your internet connection.'))};document.head.appendChild(e)}))}
+async function pdfLines(buf){
+  const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  await loadJs(B+'pdf.min.js');const lib=window.pdfjsLib;
+  if(!lib.GlobalWorkerOptions.workerSrc){
+    try{const t=await(await fetch(B+'pdf.worker.min.js')).text();lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}))}catch(e){lib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js'}
+  }
+  const pdf=await lib.getDocument({data:new Uint8Array(buf)}).promise,out=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await(await pdf.getPage(p)).getTextContent();
+    const its=tc.items.filter(i=>i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:i.transform[5]})).sort((a,b)=>b.y-a.y||a.x-b.x);
+    let cur=[],cy=null;const flush=()=>{if(cur.length)out.push(cur.sort((a,b)=>a.x-b.x).map(i=>i.s).join('\t'));cur=[]};
+    its.forEach(i=>{if(cy===null||Math.abs(i.y-cy)>3){flush();cy=i.y}cur.push(i)});flush();
+  }
+  return out;
+}
+async function docxLines(buf){
+  await loadJs('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+  const h=(await mammoth.convertToHtml({arrayBuffer:buf})).value,d=new DOMParser().parseFromString(h,'text/html'),out=[];
+  d.body.childNodes.forEach(n=>{
+    if(n.nodeName=='TABLE')n.querySelectorAll('tr').forEach(tr=>out.push([...tr.children].map(c=>c.textContent.trim()).join('\t')));
+    else if(n.textContent.trim())out.push(n.textContent.trim());
+  });
+  return out;
+}
+async function xlsxLines(buf){
+  await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  const wb=XLSX.read(buf,{type:'array'}),out=[];
+  wb.SheetNames.forEach(n=>XLSX.utils.sheet_to_csv(wb.Sheets[n],{FS:'\t'}).split(/\r?\n/).forEach(l=>out.push(l)));
+  return out;
+}
+async function rdFile(i){
+  const f=i.files[0],x=$('#rv');if(!f)return;
+  x.innerHTML='<span class="mu">Reading '+H(f.name)+'…</span>';
+  try{
+    const ext=(f.name.split('.').pop()||'').toLowerCase();let lines;
+    if(ext=='pdf')lines=await pdfLines(await f.arrayBuffer());
+    else if(ext=='docx')lines=await docxLines(await f.arrayBuffer());
+    else if(ext=='xlsx')lines=await xlsxLines(await f.arrayBuffer());
+    else if(ext=='csv'||ext=='txt')lines=(await f.text()).replace(/[,;]/g,'\t').split(/\r?\n/);
+    else{x.innerHTML='<span style="color:var(--er)">Use a PDF, DOCX, XLSX or CSV file.</span>';return}
+    if(!lines.some(l=>String(l).trim())){x.innerHTML='<span style="color:var(--er)">No readable text found. If this PDF is a scanned picture, export the results as Excel or Word instead.</span>';return}
+    $('#rt').value=lines.join('\n');prevRes();
+  }catch(e){x.innerHTML='<span style="color:var(--er)">'+H(e.message)+'</span>'}
+}
+function parseRes(lines,C){
+  const codeRe=/\b([A-Za-z]{3})\s*(\d{3}[A-Za-z]?)\b/g,regRe=/\b(\d{4})\s?\/\s?(\d{6})\b/,numRe=/\b\d{1,3}(?:\.\d+)?\b/g,sesRe=/\b(20\d{2})\s*[\/\-–]\s*(20\d{2})(?!\d)/;
+  let cols=[],cur=null;const ctx={session:null,semester:null,type:null},rows=[],issues=[],unknown={};
+  const add=(reg,c,n)=>{const sc=parseFloat(n);if(sc>=0&&sc<=100)rows.push({reg_num:reg,course_code:c,score:sc,session:ctx.session,semester:ctx.semester,result_type:ctx.type});else issues.push(reg+' '+c+': score '+n+' is not between 0 and 100')};
+  lines.forEach((ln,i)=>{
+    const t=String(ln).replace(/\s+/g,' ').trim();if(!t)return;
+    const codes=[];let m;codeRe.lastIndex=0;
+    while((m=codeRe.exec(t))){const c=(m[1]+' '+m[2]).toUpperCase();if(C[c])codes.push({c,i:m.index,e:m.index+m[0].length});else unknown[c]=(unknown[c]||0)+1}
+    const rm=regRe.exec(t);
+    if(!rm){
+      const sm=sesRe.exec(t);if(sm&&+sm[2]==+sm[1]+1)ctx.session=sm[1]+'/'+sm[2];
+      if(/\b(first|1st|harmattan)\s+semester\b|\bsemester\s*[:\-]?\s*(first|1st|1|one)\b/i.test(t))ctx.semester='First';
+      else if(/\b(second|2nd|rain)\s+semester\b|\bsemester\s*[:\-]?\s*(second|2nd|2|two)\b/i.test(t))ctx.semester='Second';
+      if(/carry\s*-?\s*over|\bre-?sit\b|spill\s*-?\s*over/i.test(t))ctx.type='CARRYOVER';
+      else if(/\bregular\b/i.test(t))ctx.type='REGULAR';
+      if(codes.length>=2){cols=codes.map(x=>x.c);cur=null}
+      else if(codes.length==1&&cur){const n=t.slice(codes[0].e).match(numRe);if(n)add(cur,codes[0].c,n[0])}
+      return;
+    }
+    const reg=rm[1]+'/'+rm[2];cur=reg;
+    if(codes.length){
+      codes.forEach((x,k)=>{const seg=t.slice(x.e,k+1<codes.length?codes[k+1].i:t.length),n=seg.match(numRe);if(n)add(reg,x.c,n[0]);else issues.push(reg+' '+x.c+': no score found')});
+    }else if(cols.length){
+      const nums=t.slice(rm.index+rm[0].length).match(numRe)||[];
+      if(!nums.length)return;
+      if(nums.length<cols.length){issues.push(reg+': found '+nums.length+' scores for '+cols.length+' courses, skipped');return}
+      cols.forEach((c,k)=>add(reg,c,nums[k]));
+    }
+  });
+  const M=new Map();rows.forEach(r=>M.set([r.reg_num,r.course_code,r.session].join('|'),r));
+  return{rows:[...M.values()],issues,unknown};
+}
+async function prevRes(){
+  const x=$('#rv'),text=$('#rt').value,P=parseRes(text.split(/\r?\n/).map(l=>l.replace(/[,;]/g,'\t')),window.CRS),{rows,issues,unknown}=P;
+  const read=`<details style="margin-top:10px"><summary class="mu">What the portal read from the file</summary><pre class="mu" style="white-space:pre-wrap;font-size:12px;max-height:220px;overflow:auto">${H(text.split(/\r?\n/).slice(0,30).join('\n').replace(/\t/g,'  |  '))}</pre></details>`;
+  const unk=Object.keys(unknown).sort((a,b)=>unknown[b]-unknown[a]).slice(0,8);
+  const unkHtml=unk.length?`<div class="mu" style="margin-top:8px">Codes in the file that are not in your course list: ${unk.map(c=>H(c)+' ('+unknown[c]+')').join(', ')}</div>`:'';
+  const first=rows.find(r=>r.session)||{},fs=rows.find(r=>r.semester)||{},ft=rows.find(r=>r.result_type)||{};
+  const setSel=(id,val)=>{const e=$(id);if(!e||!val)return;if(![...e.options].some(o=>o.value==val||o.text==val)){const o=document.createElement('option');o.textContent=val;e.prepend(o)}e.value=val};
+  setSel('#rs',first.session);setSel('#rm',fs.semester);setSel('#rtp',ft.result_type);
+  const dS=$('#rs').value,dM=$('#rm').value,dT=$('#rtp').value;
+  rows.forEach(r=>{r.session=r.session||dS;r.semester=r.semester||dM;r.result_type=r.result_type||dT});
+  const M=new Map();rows.forEach(r=>M.set([r.reg_num,r.course_code,r.session].join('|'),r));
+  const R=[...M.values()];window.RES_ROWS=R;
+  if(!R.length){x.innerHTML='<span style="color:var(--er)">No results found. Each row needs a reg number like 2023/259021 and course codes that exist in your course list.</span>'+(issues.length?'<div class="mu">'+issues.slice(0,5).map(H).join('<br>')+'</div>':'')+unkHtml+read;return}
+  const regs=[...new Set(R.map(r=>r.reg_num))],N={},G={};
+  R.forEach(r=>{const k=r.session+' · '+r.semester+' semester'+(r.result_type=='CARRYOVER'?' · carryover':'');G[k]=(G[k]||0)+1});
+  try{for(let i=0;i<regs.length;i+=150)ok(await db.from('students').select('reg_num,full_name').in('reg_num',regs.slice(i,i+150))).forEach(s=>N[s.reg_num]=s.full_name)}catch(e){}
+  const miss=regs.filter(r=>!N[r]);
+  x.innerHTML=`<div class="r" style="margin-bottom:6px"><span class="tag ok">${R.length} results</span><span class="tag">${regs.length} students</span>${miss.length?`<span class="tag er">${miss.length} not registered on the portal</span>`:''}${issues.length?`<span class="tag er">${issues.length} skipped</span>`:''}</div><div class="r" style="margin-bottom:8px">${Object.keys(G).map(k=>`<span class="tag">${H(k)}: ${G[k]}</span>`).join('')}</div><div class="ov"><table><tr><th>Reg no.</th><th>Name</th><th>Course</th><th>Score</th></tr>${R.slice(0,40).map(r=>`<tr><td>${H(r.reg_num)}</td><td>${N[r.reg_num]?H(N[r.reg_num]):'<span class="tag er">not registered</span>'}</td><td>${H(r.course_code)}</td><td>${r.score}</td></tr>`).join('')}</table></div>${R.length>40?`<p class="mu">Showing 40 of ${R.length} rows.</p>`:''}${issues.length?`<div class="mu" style="margin-top:8px">${issues.slice(0,5).map(H).join('<br>')}</div>`:''}${unkHtml}${read}<button class="p" style="margin-top:10px" onclick="saveRes()">Save ${R.length} results</button><div id="rx" class="mu" style="margin-top:8px"></div>`;
+}
+async function saveRes(){
+  const x=$('#rx'),sv=id=>{const e=$(id);return e?e.value:null},U=(window.RES_ROWS||[]).map(r=>({...r,session:r.session||sv('#rs'),semester:r.semester||sv('#rm'),result_type:r.result_type||sv('#rtp')||'REGULAR'}));
+  if(!U.length)return;x.textContent='Saving…';
+  try{
+    for(let i=0;i<U.length;i+=300)ok(await db.from('student_results').upsert(U.slice(i,i+300),{onConflict:'reg_num,course_code,session'}));
+    const G=[...new Set(U.map(r=>r.session+' '+r.semester+' semester'))];
+    x.innerHTML=`<span style="color:var(--gr)">Saved ${U.length} results (${G.map(H).join(', ')}).</span>`;
+    notify([{target_role:'STUDENT',title:'Results uploaded',message:`${G.join(', ')} results are available.`,link_url:'/results'}]);
+    loadSum();
+  }catch(e){x.textContent=e.message}
+}
+async function loadSum(){
+  const o=$('#rsm');if(!o)return;
+  try{
+    const S=ok(await db.from('student_results_summary').select('*').order('session',{ascending:false}).order('semester'));
+    o.innerHTML=S.length?`<div class="ov"><table><tr><th>Session</th><th>Semester</th><th>Type</th><th>Results</th><th>Students</th><th></th></tr>${S.map(r=>`<tr><td>${H(r.session)}</td><td>${H(r.semester)}</td><td>${r.result_type=='CARRYOVER'?'Carryover':'Regular'}</td><td>${r.results}</td><td>${r.students}</td><td><button class="s d" onclick="delSet('${H(r.session)}','${H(r.semester)}','${H(r.result_type)}')">Remove</button></td></tr>`).join('')}</table></div>`:'No results uploaded yet.';
+  }catch(e){o.textContent=e.message}
+}
+async function delSet(ses,sem,ty){
+  if(!confirm('Remove ALL '+(ty=='CARRYOVER'?'carryover':'regular')+' results for '+ses+' '+sem+' semester? You can upload the file again afterwards.'))return;
+  try{ok(await db.from('student_results').delete().eq('session',ses).eq('semester',sem).eq('result_type',ty));loadSum()}catch(e){alert(e.message)}
+}
+async function lkRes(){
+  const q=$('#rl').value.trim(),o=$('#rl2');
+  if(!q)return;
+  const reg=q.replace(/\s+/g,'');
+  try{
+    if(REG.test(reg)){
+      const[R,S]=await Promise.all([db.from('student_results').select('*').eq('reg_num',reg).then(ok),db.from('students').select('full_name,level').eq('reg_num',reg).limit(1).then(ok)]);
+      const st=S[0];
+      o.innerHTML=`<div class="c"><h3>${st?H(st.full_name):'Not registered on the portal'}</h3><div class="mu">${H(reg)}${st?' · Level '+(st.level||'—'):''}</div></div>`+transcript(R,window.CRS);
+    }else{
+      if(!/^[\w\s\/.\-]+$/.test(q)){o.innerHTML='<div class="c mu">Use letters, numbers or a reg number.</div>';return}
+      const S=ok(await db.from('students').select('reg_num,full_name,level').or(`reg_num.ilike.%${q}%,full_name.ilike.%${q}%`).order('full_name').limit(15));
+      o.innerHTML=`<div class="c"><h3>Matches</h3>${S.map(s=>`<div class="row"><div><b>${H(s.full_name)}</b><div class="mu">${H(s.reg_num)} · Level ${s.level||'—'}</div></div><button class="s" onclick="$('#rl').value='${H(s.reg_num)}';lkRes()">Results</button></div>`).join('')||'<span class="mu">No students found.</span>'}</div>`;
+    }
+  }catch(e){o.innerHTML=`<div class="c">${H(e.message)}</div>`}
+}
+
+// ===== Materials: "CODE - Title" dropdown, no title box, working upload =====
+V.mat=async function(){
+  const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code,title').order('code').then(ok):[]]);
+  const L=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);window.MATS=L;
+  v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}<div class="c"><h3>Course materials</h3>${L.map(m=>{const own=m.uploaded_by_id==me.id||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)
+};
+async function upl(){
+  const m=$('#um'),f=$('#mf').files[0],cid=$('#mc').value;
+  if(!cid){m.textContent='Choose a course first.';return}
+  if(!f){m.textContent='Choose a PDF file.';return}
+  if(f.type!='application/pdf'&&!/\.pdf$/i.test(f.name)){m.textContent='PDF files only.';return}
+  if(f.size>20e6){m.textContent='File is over 20 MB.';return}
+  m.textContent='Uploading…';
+  try{
+    const label=$('#mc').selectedOptions[0].textContent,ccode=label.split(' - ')[0].replace(/\W+/g,'');
+    const path=`${ccode}/${Date.now()}_${f.name.replace(/[^\w.\-]+/g,'_')}`;
+    const up=await db.storage.from('materials').upload(path,f,{contentType:'application/pdf'});
+    if(up.error)throw up.error;
+    const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
+    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:me.role};
+    const d=$('#md2').value.trim();if(d)row.description=d;
+    ok(await db.from('course_materials').insert(row));
+    if(row.is_public)await notify([{target_role:'STUDENT',title:'New material',message:`${row.title} (${label})`,link_url:'/materials'}]);
+    go('mat');
+  }catch(e){m.textContent=e.message}
+}
+async function vis(id,pub){
+  try{ok(await db.from('course_materials').update({is_public:pub}).eq('id',id));go('mat')}catch(e){alert(e.message)}
+}
+async function delM(id){
+  if(!confirm('Delete this material?'))return;
+  try{
+    const r=ok(await db.from('course_materials').select('file_url').eq('id',id).limit(1))[0];
+    ok(await db.from('course_materials').delete().eq('id',id));
+    const k=r&&String(r.file_url).split('/materials/')[1];
+    if(k)await db.storage.from('materials').remove([decodeURIComponent(k)]);
+    go('mat');
+  }catch(e){alert(e.message)}
+}
+
+// ===== AI: question generator, drill tests, ticket help (Gemini via the "ai" edge function) =====
+const MTX={},AL='ABCD',AI_FN='ai'; // URL slug of your deployed AI function
+async function callAI(task,p,_n=0){
+  const r=await db.functions.invoke(AI_FN,{body:{task,...p}});
+  if(r.error)throw new Error('The AI service could not be reached. Check your connection, or that the "ai" function is deployed.');
+  if(r.data&&r.data.error){
+    if(r.data.retryable&&_n<1){await new Promise(z=>setTimeout(z,3000));return callAI(task,p,_n+1)} // one automatic retry when the AI is busy
+    throw new Error(r.data.error)}
+  return r.data;
+}
+async function matText(id){
+  if(MTX[id])return MTX[id];
+  const m=ok(await db.from('course_materials').select('file_url').eq('id',id).limit(1))[0];
+  const t=(await pdfLines(await(await fetch(m.file_url)).arrayBuffer())).join(' ').replace(/\s+/g,' ').trim();
+  if(t.length<200)throw new Error('This PDF has no readable text (it may be a scanned picture).');
+  return MTX[id]=t.slice(0,40000);
+}
+const qHtml=(qs,show)=>qs.map((q,i)=>`<div class="row" style="flex-direction:column;align-items:flex-start"><b>${i+1}. ${H(q.q)}</b>${q.type=='short'?(show?`<div class="mu">Model answer: <span style="color:var(--gr)">${H(q.answer)}</span>${q.marks?' ('+q.marks+' marks)':''}</div>`:'<div class="mu">Short-answer question</div>'):q.options.map((o,k)=>`<div style="${show&&k==q.answer?'color:var(--gr)':'color:var(--tx2)'}">${AL[k]}. ${H(o)}${show&&k==q.answer?' ✓':''}</div>`).join('')+(show?`<div class="mu">${H(q.explanation||'')}</div>`:'')}</div>`).join('');
+const qText=qs=>qs.map((q,i)=>`${i+1}. ${q.q}\n`+(q.type=='short'?`   Model answer: ${q.answer}${q.marks?' ('+q.marks+' marks)':''}`:q.options.map((o,k)=>`   ${AL[k]}. ${o}`).join('\n')+`\n   Answer: ${AL[q.answer]}\n   Explanation: ${q.explanation||''}`)).join('\n\n');
+const RAD='style="width:18px;height:18px;margin:0 10px 0 0;flex:none"';
+
+V.exam=async function(){
+  const M=ok(await db.from('course_materials').select('id,title,is_public,courses(code,title)').order('created_at',{ascending:false}));
+  const opt=M.filter(m=>!isSt()||m.is_public).map(m=>`<option value="${m.id}">${H((m.courses||{}).code||'')} - ${H((m.courses||{}).title||'')} · ${H(m.title)}</option>`).join('');
+  if(isSt()){
+    const A=ok(await db.from('drill_attempts').select('*').eq('reg_num',me.reg).order('created_at',{ascending:false}).limit(8));
+    v(`<div class="c"><h3>✨ AI drill test</h3><p class="mu">Pick a course material. The AI writes practice questions from that PDF, scores you at the end and explains every answer. Drill scores are for practice only and do not count towards your results.</p>${opt?`<label>Material</label><select id="dm">${opt}</select><div class="g"><div><label>Questions</label><select id="dn"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div><div><label>Difficulty</label><select id="dd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="startDrill()">Start drill</button>`:'<span class="mu">No materials have been uploaded yet.</span>'}</div><div id="dz"></div><div class="c"><h3>My recent drills</h3>${A.map(a=>`<div class="row"><div><b>${H(a.material_title||'')}</b><div class="mu">${fd(a.created_at)}</div></div><span class="tag ${a.score/a.total>=.5?'ok':'er'}">${a.score}/${a.total}</span></div>`).join('')||'<span class="mu">No drills yet.</span>'}</div>`);
+    return;
+  }
+  const B=ok(await db.from('question_banks').select('*').order('created_at',{ascending:false}).limit(30));
+  window.QB=B;
+  v(`<div class="c"><h3>✨ AI question generator</h3><p class="mu">Questions are written from your course material only. Always review them before using.</p><label>Course material (PDF)</label><select id="qm"><option value="">None (use pasted notes)</option>${opt}</select><label>Or paste notes (used instead of the PDF)</label><textarea id="qn" rows="4"></textarea><div class="g"><div><label>Type</label><select id="qk"><option value="mcq">Multiple choice</option><option value="tf">True / False</option><option value="short">Short answer (theory)</option><option value="mixed">Mixed</option></select></div><div><label>Number of questions</label><input id="qc" type="number" value="10" min="1" max="25"></div><div><label>Difficulty</label><select id="qd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="genQ()">Generate</button></div><div id="qo"></div><div id="qp"></div><div class="c"><h3>Question bank</h3>${B.map(b=>`<div class="row"><div><b>${H(b.title)}</b><div class="mu">${H(b.course_code||'')} · ${(b.questions||[]).length} questions · ${H(b.created_by_name||'')} · ${fd(b.created_at)}</div></div><div class="r"><button class="s" onclick="viewQ('${b.id}')">View</button><button class="s" onclick="cpQ('${b.id}')">Copy</button>${(b.created_by_id==me.id||isAd())?`<button class="s d" onclick="delQ('${b.id}')">✕</button>`:''}</div></div>`).join('')||'<span class="mu">Nothing saved yet.</span>'}</div>`);
+};
+
+function renderDrill(qs,head,sel,lab){
+  window.DRILL={qs,lab,sel};const z=$(sel);
+  z.innerHTML=`<div class="c"><h3>${H(head)}</h3><p class="mu">Answer every question, then submit. Your score and the explanations only appear after you submit.</p>${qs.map((q,i)=>`<div class="row" style="flex-direction:column;align-items:flex-start"><b>${i+1}. ${H(q.q)}</b>${q.options.map((o,k)=>`<label style="display:flex;align-items:center;color:var(--tx);margin:6px 0"><input type="radio" name="dq${i}" value="${k}" ${RAD}>${AL[k]}. ${H(o)}</label>`).join('')}</div>`).join('')}<button class="p" onclick="subDrill()">Submit and see my score</button></div>`;
+  z.scrollIntoView({behavior:'smooth'});
+}
+async function startDrill(){
+  const z=$('#dz'),id=$('#dm').value;
+  z.innerHTML='<div class="c mu">Reading the PDF and writing questions. This can take up to a minute…</div>';
+  try{
+    const lab=$('#dm').selectedOptions[0].textContent,d=await callAI('quiz',{material:await matText(id),n:+$('#dn').value,kind:'mcq',difficulty:$('#dd').value});
+    if(!d.questions.length)throw new Error('The AI did not return usable questions. Please try again.');
+    renderDrill(d.questions,'Drill: '+lab,'#dz',lab);
+  }catch(e){z.innerHTML=`<div class="c" style="border-color:var(--er)">${H(e.message)}</div>`}
+}
+async function subDrill(){
+  const D=window.DRILL,z=$(D.sel);let sc=0;
+  const res=D.qs.map((q,i)=>{const s=document.querySelector(`input[name=dq${i}]:checked`),a=s?+s.value:-1;if(a==q.answer)sc++;return{q,a}});
+  const tot=D.qs.length,pct=Math.round(sc/tot*100);
+  z.innerHTML=`<div class="c"><h3>Your score</h3><div class="big">${sc}/${tot}</div><div class="mu" style="text-align:center">${pct}% · grade ${grade(pct)[0]}</div></div><div class="c"><h3>Review and explanations</h3>${res.map(({q,a},i)=>`<div class="row" style="flex-direction:column;align-items:flex-start"><b>${i+1}. ${H(q.q)}</b><div class="mu">Your answer: <span style="color:${a==q.answer?'var(--gr)':'var(--er)'}">${a<0?'not answered':AL[a]+'. '+H(q.options[a])}</span></div>${a==q.answer?'':`<div class="mu">Correct answer: <span style="color:var(--gr)">${AL[q.answer]}. ${H(q.options[q.answer])}</span></div>`}<div style="font-size:13.5px">${H(q.explanation||'')}</div></div>`).join('')}<button class="p" onclick="go('exam')">Start again</button></div>`;
+  z.scrollIntoView({behavior:'smooth'});
+  if(isSt())try{ok(await db.from('drill_attempts').insert({reg_num:me.reg,material_title:D.lab,score:sc,total:tot}))}catch(e){}
+}
+
+function setCard(h,qs,extra){
+  window.CUR={qs,show:false};
+  return`<div class="c"><h3>${h}</h3><div class="r" style="margin-bottom:10px"><button class="s" id="qta" onclick="togAns()">Show answers</button><button class="s" onclick="practice()">Take as a practice test</button></div><div id="qls">${qHtml(qs,false)}</div>${extra||''}</div>`;
+}
+function togAns(){const C=window.CUR;C.show=!C.show;$('#qls').innerHTML=qHtml(C.qs,C.show);$('#qta').textContent=C.show?'Hide answers':'Show answers'}
+function practice(){
+  const qs=window.CUR.qs.filter(q=>q.type!='short');
+  if(!qs.length){alert('A practice test needs multiple-choice or true/false questions.');return}
+  renderDrill(qs,'Practice test','#qp','Practice');
+}
+async function genQ(){
+  const z=$('#qo'),id=$('#qm').value,notes=$('#qn').value.trim();
+  $('#qp').innerHTML='';
+  z.innerHTML='<div class="c mu">Writing questions. This can take up to a minute…</div>';
+  try{
+    const txt=notes.length>=100?notes:id?await matText(id):'';
+    if(!txt)throw new Error('Pick a material, or paste a few paragraphs of notes.');
+    const kind=$('#qk').value,d=await callAI('quiz',{material:txt,n:+$('#qc').value||10,kind,difficulty:$('#qd').value});
+    if(!d.questions.length)throw new Error('The AI did not return usable questions. Please try again.');
+    window.GEN={qs:d.questions,kind,diff:$('#qd').value,code:(notes.length<100&&id)?$('#qm').selectedOptions[0].textContent.split(' - ')[0]:''};
+    z.innerHTML=setCard(`Draft questions (${d.questions.length})`,d.questions,`<label>Title to save as</label><input id="qt" placeholder="e.g. CSC 301 mid-semester test"><div class="r"><button class="p" onclick="saveQ()">Save to question bank</button><button onclick="copyGen()">Copy as text</button></div><div id="qx" class="mu"></div>`);
+    z.scrollIntoView({behavior:'smooth'});
+  }catch(e){z.innerHTML=`<div class="c" style="border-color:var(--er)">${H(e.message)}</div>`}
+}
+async function saveQ(){
+  const t=$('#qt').value.trim(),x=$('#qx'),G=window.GEN;
+  if(!t){x.textContent='Give the set a title.';return}
+  try{ok(await db.from('question_banks').insert({title:t,course_code:G.code||null,kind:G.kind,difficulty:G.diff,questions:G.qs,created_by_id:me.id,created_by_name:me.name,created_by_type:me.role}));go('exam')}catch(e){x.textContent=e.message}
+}
+async function copyText(t,x){try{await navigator.clipboard.writeText(t);if(x)x.textContent='Copied.'}catch(e){if(x)x.textContent='Could not copy on this device.'}}
+const copyGen=()=>copyText(qText(window.GEN.qs),$('#qx'));
+const bank=id=>(window.QB||[]).find(b=>b.id==id);
+function viewQ(id){const b=bank(id);if(!b)return;$('#qp').innerHTML='';$('#qo').innerHTML=setCard(H(b.title),b.questions);$('#qo').scrollIntoView({behavior:'smooth'})}
+function cpQ(id){const b=bank(id);if(b)copyText(qText(b.questions))}
+async function delQ(id){if(!confirm('Delete this question set?'))return;try{ok(await db.from('question_banks').delete().eq('id',id));go('exam')}catch(e){alert(e.message)}}
+
+const TSL={OPEN:'Open',IN_PROGRESS:'In progress',RESOLVED:'Resolved',CLOSED:'Closed'};
+async function newTk(){
+  const sb=$('#ks').value.trim(),m=$('#km').value.trim(),x=$('#kx');
+  if(!sb||!m){x.textContent='Add a subject and details.';return}
+  try{
+    const code='TKT-'+Date.now().toString(36).toUpperCase().slice(-5)+Math.random().toString(36).slice(2,5).toUpperCase();
+    ok(await db.from('support_tickets').insert({ticket_code:code,student_id:me.id,subject:sb,category:$('#kc').value,description:m,priority:$('#kp').value}));
+    await notify([{target_role:'ADMIN',title:'New support ticket',message:`${me.name}: ${sb}`,link_url:'/tickets'}]);
+    go('tk');
+  }catch(e){x.textContent=e.message}
+}
+async function repTk(id,sid){
+  const m=$('#kr_'+id).value.trim();if(!m)return;
+  try{
+    ok(await db.from('ticket_replies').insert({ticket_id:id,sender_type:me.role,sender_id:me.id,message:m}));
+    await notify([isAd()?{target_user_id:sid,title:'Ticket reply',message:m.slice(0,120),link_url:'/ticket/'+id}:{target_role:'ADMIN',title:'Ticket reply',message:`${me.name}: ${m.slice(0,100)}`,link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+async function setTk(id,st,sid){
+  try{
+    ok(await db.from('support_tickets').update({status:st,assigned_to_admin:me.id}).eq('id',id));
+    await notify([{target_user_id:sid,title:'Ticket '+TSL[st].toLowerCase(),message:'Your ticket status is now: '+TSL[st],link_url:'/ticket/'+id}]);
+    go('tk');
+  }catch(e){alert(e.message)}
+}
+function useTk(){
+  const t=window.TKD;if(!t)return;
+  $('#ks').value=t.subject||'';$('#km').value=t.message||'';
+  const p=String(t.priority||'').toUpperCase();if(['LOW','MEDIUM','HIGH','URGENT'].includes(p))$('#kp').value=p;
+  $('#ks').scrollIntoView({behavior:'smooth'});
+}
+async function aiRep(id){
+  const t=(window.TKS||[]).find(x=>x.id==id),el=$('#kr_'+id);if(!t||!el)return;
+  el.placeholder='Writing a draft…';
+  try{
+    const d=await callAI('ticket_reply',{ticket:{subject:t.subject,message:t.description,category:t.category,priority:t.priority,status:t.status,student:t.student_name},replies:(window.TKR||[]).filter(r=>r.ticket_id==id).map(r=>({by:RN[r.sender_type]||r.sender_type,text:r.message}))});
+    el.value=d.reply||'';el.placeholder='Write a reply…';
+  }catch(e){el.placeholder=e.message}
+}
+
+async function askTk(){
+  const t=$('#ka').value.trim(),o=$('#kao');
+  if(t.length<10){o.textContent='Describe the issue in a sentence or two.';return}
+  o.textContent='Thinking…';
+  try{
+    const d=await callAI('ticket_help',{text:t});window.TKD=d.ticket||null;
+    o.innerHTML=`<div style="margin:8px 0;color:var(--tx)">${H(d.answer||'')}</div>${d.ticket?'<button class="s p" onclick="useTk()">Use this for my ticket</button>':''}`;
+  }catch(e){o.textContent=e.message}
+}
+
+// ===== AI summary of course PDFs =====
+async function matTextAll(id){
+  const k='F'+id;if(MTX[k])return MTX[k];
+  const m=ok(await db.from('course_materials').select('file_url').eq('id',id).limit(1))[0];
+  const t=(await pdfLines(await(await fetch(m.file_url)).arrayBuffer())).join(' ').replace(/\s+/g,' ').trim();
+  if(t.length<200)throw new Error('This PDF has no readable text (it may be a scanned picture), so it cannot be summarized.');
+  return MTX[k]=t.slice(0,180000);
+}
+function sumShow(S,id,title){
+  const kp=(S.key_points||[]).map(x=>`<li style="margin:5px 0">${H(x)}</li>`).join(''),
+  kt=(S.key_terms||[]).map(t=>`<div class="row"><div><b>${H(t.term)}</b><div class="mu">${H(t.meaning)}</div></div></div>`).join('');
+  window.SUMT=`${title}\n\n${S.overview||''}\n\nKey points:\n${(S.key_points||[]).map((x,i)=>(i+1)+'. '+x).join('\n')}\n\nKey terms:\n${(S.key_terms||[]).map(t=>t.term+': '+t.meaning).join('\n')}`;
+  $('#mb').innerHTML=`<h3>✨ Summary</h3><p class="mu">${H(title)}</p><p>${H(S.overview||'')}</p><b>Key points</b><ul style="padding-left:20px;margin:8px 0">${kp}</ul>${kt?`<b>Key terms</b>${kt}`:''}<p class="mu">AI-written from the PDF. Use it for revision, and read the full material for details.</p><div class="r" style="margin-top:8px"><button class="s" onclick="copyText(window.SUMT,this)">Copy</button>${canUp()?`<button class="s" onclick="sumMat('${id}',true)">Regenerate</button>`:''}<button class="s" onclick="closeM()">Close</button></div>`;
+}
+async function sumMat(id,force){
+  const row=(window.MATS||[]).find(m=>m.id==id)||{},title=row.title||'Course material';
+  modal(`<h3>✨ Summary</h3><p class="mu">${H(title)}</p><p class="mu" id="smp">Checking for a saved summary…</p>`);
+  try{
+    let S=null;
+    if(!force){const c=ok(await db.from('material_summaries').select('summary').eq('material_id',id).limit(1))[0];if(c)S=c.summary}
+    if(!S){
+      $('#smp').textContent='Reading the PDF…';
+      const txt=await matTextAll(id),CH=45000,parts=[];
+      for(let i=0;i<txt.length;i+=CH)parts.push(txt.slice(i,i+CH));
+      let src=txt;
+      if(parts.length>1){
+        const notes=[];
+        for(let i=0;i<parts.length;i++){$('#smp').textContent='Summarizing part '+(i+1)+' of '+parts.length+'…';notes.push((await callAI('summarize',{material:parts[i],mode:'part'})).notes||'')}
+        src=notes.join('\n\n');
+      }
+      $('#smp').textContent='Writing the summary…';
+      S=await callAI('summarize',{material:src,mode:'final'});
+      try{ok(await db.from('material_summaries').upsert({material_id:id,summary:S,created_by_id:me.id}))}catch(e){}
+    }
+    sumShow(S,id,title);
+  }catch(e){$('#mb').innerHTML=`<h3>✨ Summary</h3><p class="mu">${H(title)}</p><p style="color:var(--er)">${H(e.message)}</p><button class="s" onclick="closeM()">Close</button>`}
+}
+
+// ===== Show / hide password (adds an eye button to every password field) =====
+(function(){
+const EYE='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+OFF='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+function wrap(){
+  document.querySelectorAll('input[type=password]:not([data-pw])').forEach(i=>{
+    i.dataset.pw=1;
+    const w=document.createElement('div');w.className='pw';
+    i.parentNode.insertBefore(w,i);w.appendChild(i);
+    const b=document.createElement('button');b.type='button';b.className='pwb';b.setAttribute('aria-label','Show password');b.innerHTML=EYE;
+    b.onclick=()=>{const show=i.type=='password';i.type=show?'text':'password';b.innerHTML=show?OFF:EYE;b.setAttribute('aria-label',show?'Hide password':'Show password')};
+    w.appendChild(b);
+  });
+}
+new MutationObserver(wrap).observe(document.body,{childList:true,subtree:true});
+wrap();
+})();
+
+// ===== Auto logout after inactivity =====
+(function(){
+const IDLE_MIN=10, WARN_SEC=60, LIM=IDLE_MIN*60000;   // change IDLE_MIN to set the timeout
+let last=Date.now(),warned=false,saved=0;
+const store=()=>{saved=last;localStorage.setItem('lastActive',last)};
+const mark=()=>{if(warned||!me)return;last=Date.now();if(last-saved>5000)store()};
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(e=>addEventListener(e,mark,{passive:true,capture:true}));
+window.idleStay=()=>{warned=false;last=Date.now();store();closeM()};
+function expire(){warned=false;closeM();out();msg('You were signed out after '+IDLE_MIN+' minutes of inactivity.','ok')}
+function tick(){
+  if(!me){warned=false;last=Date.now();return}
+  const idle=Date.now()-last;
+  if(idle>=LIM)return expire();
+  if(idle>=LIM-WARN_SEC*1000){
+    const left=Math.ceil((LIM-idle)/1000);
+    if(!warned){warned=true;modal(`<h3>Still there?</h3><p class="mu">For your security you will be signed out in <b id="idc">${left}</b>s because of inactivity.</p><div class="r"><button class="p" onclick="idleStay()">Stay signed in</button><button onclick="closeM();out()">Sign out now</button></div>`)}
+    else{const c=document.getElementById('idc');if(c)c.textContent=left}
+  }
+}
+setInterval(tick,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+document.getElementById('md').addEventListener('click',e=>{if(warned&&e.target.id==='md')idleStay()});
+const la=+localStorage.getItem('lastActive')||0;
+if(me&&la&&Date.now()-la>LIM)expire();
+})();
+</script>
+<script>
+// ===== Result-sheet reader: understands the department PDF layout =====
+// Each course = score / grade / GP. Blank cells are handled by column position.
+(function(){
+const HDR=/^(?:[A-Za-z]{2,5}-)?[A-Za-z]{3}\s?\d{3}[A-Za-z]?$/,REGX=/^\d{4}\/\d{6}$/,NUM=/^\d{1,3}(\.\d+)?$/;
+const ck=s=>String(s).toUpperCase().replace(/UNN/g,'').replace(/[^A-Z0-9]/g,'');
+
+// match a sheet heading (UNN-CRE 327, VTE 301A ...) to a code in your courses table
+window.ALIAS=(()=>{try{return JSON.parse(localStorage.getItem('resAlias')||'{}')}catch(e){return{}}})();
+function courseOf(raw,C){
+  const k=ck(raw),sp=x=>/\d[A-Z]$/.test(x)?x.slice(0,-1):x,loose=[];
+  for(const c of Object.keys(C)){const kk=ck(c);if(kk==k)return c;if(sp(kk)==sp(k))loose.push(c)}   // VTE 101 on the sheet also finds VTE 101B in the table
+  return loose.length==1?loose[0]:null;
+}
+
+// ---- 1. read every word of the PDF with its x/y position ----
+async function pdfTokens(buf){
+  const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  await loadJs(B+'pdf.min.js');const lib=window.pdfjsLib;
+  if(!lib.GlobalWorkerOptions.workerSrc){
+    try{const t=await(await fetch(B+'pdf.worker.min.js')).text();lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}))}catch(e){lib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js'}
+  }
+  const pdf=await lib.getDocument({data:new Uint8Array(buf)}).promise,pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await(await pdf.getPage(p)).getTextContent(),T=[],R=[];
+    tc.items.forEach(i=>{
+      const s=i.str.trim();if(!s)return;
+      const X=i.transform[4],Y=i.transform[5];
+      if(HDR.test(s)){T.push({s,x:X,y:Y,hd:true});return}
+      if(Math.abs(i.transform[1])>0.1){R.push({s,x:X,y:Y,up:i.transform[1]>0});return}   // rotated text
+      const re=/\S+/g,raw=i.str;let m;
+      while((m=re.exec(raw)))T.push({s:m[0],x:X+(i.width||0)*m.index/raw.length,y:Y});
+    });
+    // rotated column headings (course codes), re-joined if split
+    const G=[];R.forEach(q=>{const g=G.find(g=>Math.abs(g.x-q.x)<3);if(g)g.p.push(q);else G.push({x:q.x,p:[q]})});
+    G.forEach(g=>{
+      const up=g.p[0].up;g.p.sort((a,b)=>up?a.y-b.y:b.y-a.y);
+      const s=g.p.map(q=>q.s).join(' ').replace(/\s+/g,' ').trim();
+      if(HDR.test(s))T.push({s,x:g.x,y:Math.min(...g.p.map(q=>q.y)),hd:true});
+    });
+    pages.push(T);
+  }
+  return pages;
+}
+
+// ---- 2. turn positioned words into {reg, course, score} rows ----
+function readSheet(pages,C){
+  const rows=[],issues=[],info={},seen={},unk={},ub={};let cols=[],none=0;
+  const toCols=g=>g.items.map(h=>({code:h.s,x:h.x}));
+  pages.forEach(T=>{
+    const groups=[];
+    T.filter(t=>t.hd).sort((a,b)=>b.y-a.y).forEach(h=>{
+      const g=groups.find(g=>Math.abs(g.y-h.y)<30);
+      if(g){g.items.push(h);g.y=Math.min(g.y,h.y)}else groups.push({y:h.y,items:[h]});
+    });
+    const ev=[...groups.map(g=>({y:g.y,g})),...T.filter(t=>!t.hd&&REGX.test(t.s)).map(r=>({y:r.y,r}))].sort((a,b)=>b.y-a.y);
+    const rx=T.filter(t=>!t.hd&&REGX.test(t.s));
+    if(rx.length){const x0=Math.min(...rx.map(t=>t.x));   // rows whose reg number cell is unreadable
+      T.filter(t=>!t.hd&&/^\d{1,3}$/.test(t.s)&&t.x<x0-8).forEach(sn=>{
+        const c=T.filter(t=>!t.hd&&Math.abs(t.y-sn.y)<4&&t.x>sn.x+8&&t.x<x0+90).sort((a,b)=>a.x-b.x)[0];
+        if(c&&!REGX.test(c.s)&&/^20\d{2}/.test(c.s))issues.push('Row '+sn.s+': "'+c.s+'" is not a valid registration number, so its scores were skipped. Correct it on the sheet.');
+      })}
+    ev.forEach(e=>{
+      if(e.g){cols=toCols(e.g);return}
+      if(!cols.length&&groups.length)cols=toCols(groups[0]);
+      const r=e.r,reg=r.s;
+      const tk=T.filter(t=>!t.hd&&Math.abs(t.y-r.y)<4&&t.x>r.x+5).sort((a,b)=>a.x-b.x);
+      const tr=[];let i=0;
+      while(i+2<tk.length&&NUM.test(tk[i].s)&&/^[A-F]$/.test(tk[i+1].s)&&NUM.test(tk[i+2].s)){
+        tr.push({sc:+tk[i].s,l:tk[i+1].s,gp:+tk[i+2].s,x:tk[i].x});i+=3;
+      }
+      const tail=tk.slice(i).map(t=>t.s).filter(s=>NUM.test(s)).map(Number);   // units, TGP, [carry-over units], total
+      if(!tr.length){none++;return}
+      let sum=0,miss=false;
+      tr.forEach(t=>{
+        let b=null,d=1e9;cols.forEach(c=>{const dd=Math.abs(c.x-t.x);if(dd<d){d=dd;b=c}});
+        if(!b||d>45){issues.push(reg+': score '+t.sc+' did not line up with a course column');return}
+        const kk=ck(b.code),A=window.ALIAS||{};if(A[kk]==='-')return;
+        const code=(A[kk]&&C[A[kk]])?A[kk]:courseOf(b.code,C);
+        if(!code){unk[b.code]=1;miss=true;return}
+        const g=grade(t.sc),u=C[code].credit_units;sum+=t.gp;
+        if(g[0]!=t.l)issues.push(reg+' '+code+': sheet says '+t.l+' but '+t.sc+' is '+g[0]);
+        else if(u!=null&&+u*g[1]!=t.gp)ub[code]=(ub[code]||0)+1;
+        const k=reg+'|'+code,row={reg_num:reg,course_code:code,score:t.sc};
+        if(seen[k]!=null)rows[seen[k]]=row;else{seen[k]=rows.length;rows.push(row)}
+      });
+      if(tail.length>1){
+        const nt=tail.length,tgp=nt==2?tail[0]:tail[1],units=nt==2?tail[1]:tail[0],carry=nt>3?tail[2]:0;   // sheets with no Units column end with just TGP and total
+        info[reg]={tgp,carry,units};
+        if(!miss&&(sum>tgp||(!carry&&sum!=tgp)))issues.push(reg+': sheet total points is '+tgp+' but its courses add up to '+sum);
+      }
+    });
+  });
+  Object.keys(ub).forEach(c=>issues.push(c+': the sheet points fit a different number of units than your course table says ('+C[c].credit_units+') for '+ub[c]+' students. Check the units for '+c+'.'));
+  return{rows,issues,info,none,unknown:Object.keys(unk)};
+}
+
+// ---- 3. preview with a per-student tally ----
+async function showRes(rows,issues,sh){
+  const x=$('#rv'),C=window.CRS||{};window.RES_ROWS=rows;
+  if(!rows.length){x.innerHTML='<span style="color:var(--er)">No results found. Make sure each row has a reg number like 2023/259021 and course codes that exist in your course list.</span>'+(issues.length?'<div class="mu">'+issues.slice(0,6).map(H).join('<br>')+'</div>':'');return}
+  const regs=[...new Set(rows.map(r=>r.reg_num))],N={};
+  try{for(let i=0;i<regs.length;i+=150)ok(await db.from('students').select('reg_num,full_name').in('reg_num',regs.slice(i,i+150))).forEach(s=>N[s.reg_num]=s.full_name)}catch(e){}
+  const miss=regs.filter(r=>!N[r]),by={};
+  rows.forEach(r=>{
+    const u=+(C[r.course_code]||{}).credit_units||0,p=grade(r.score)[1],b=by[r.reg_num]||(by[r.reg_num]={n:0,u:0,gp:0});
+    b.n++;b.u+=u;b.gp+=u*p;
+  });
+  const I=(sh&&sh.info)||{};
+  x.innerHTML=`<div class="r" style="margin-bottom:8px"><span class="tag ok">${rows.length} results</span><span class="tag">${H($('#rs').value)} · ${H($('#rm').value)} semester${$('#rtp')&&$('#rtp').value=='CARRYOVER'?' · carryover':''}</span><span class="tag">${regs.length} students</span>${sh&&sh.none?`<span class="tag">${sh.none} with no scores</span>`:''}${miss.length?`<span class="tag er">${miss.length} not registered on the portal</span>`:''}${issues.length?`<span class="tag er">${issues.length} warnings</span>`:''}</div>
+<div class="ov"><table><tr><th>Reg no.</th><th>Name</th><th>Courses</th><th>Units</th><th>TGP</th><th>GPA</th><th>Sheet TGP</th></tr>${regs.slice(0,40).map(g=>{const b=by[g];return`<tr><td>${H(g)}</td><td>${N[g]?H(N[g]):'<span class="tag er">not registered</span>'}</td><td>${b.n}</td><td>${b.u}</td><td>${b.gp}</td><td><b>${b.u?(b.gp/b.u).toFixed(2):'—'}</b></td><td>${I[g]?I[g].tgp:'—'}</td></tr>`}).join('')}</table></div>${regs.length>40?`<p class="mu">Showing 40 of ${regs.length} students.</p>`:''}
+<p class="mu" style="margin-top:8px">GPA here covers only the courses on this sheet. “Sheet TGP” is the total printed on the sheet (it includes carry-over courses).</p>${issues.length?`<div class="mu" style="margin-top:8px">${issues.slice(0,8).map(H).join('<br>')}${issues.length>8?'<br>…and '+(issues.length-8)+' more':''}</div>`:''}<button class="p" style="margin-top:10px" onclick="saveRes()">Save ${rows.length} results</button><div id="rx" class="mu" style="margin-top:8px"></div>`;
+}
+
+// ---- 4. hook into the existing upload screen ----
+window.prevRes=async function(){
+  const r=parseRes($('#rt').value.split(/\r?\n/).map(l=>l.replace(/[,;]/g,'\t')),window.CRS);
+  await showRes(r.rows,r.issues,null);
+};
+
+window.rdFile=async function(i){
+  const f=i.files[0],x=$('#rv');if(!f)return;
+  x.innerHTML='<span class="mu">Reading '+H(f.name)+'…</span>';
+  try{
+    const ext=(f.name.split('.').pop()||'').toLowerCase();let lines;
+    if(ext=='pdf'){
+      const buf=await f.arrayBuffer(),pgs=await pdfTokens(buf.slice(0));window.SHEET_PAGES=pgs;const r=readSheet(pgs,window.CRS);
+      if(r.rows.length||r.unknown.length){
+        try{applyCtx(sheetCtx(await pdfLines(buf.slice(0))))}catch(e){}
+        $('#rt').value=r.rows.map(q=>q.reg_num+','+q.course_code+','+q.score).join('\n');
+        await showRes(r.rows,r.issues,r);mapUI(r.unknown);return;
+      }
+      lines=await pdfLines(buf.slice(0));   // not a grid sheet: use the old reader
+    }
+    else if(ext=='docx')lines=await docxLines(await f.arrayBuffer());
+    else if(ext=='xlsx')lines=await xlsxLines(await f.arrayBuffer());
+    else if(ext=='csv'||ext=='txt')lines=(await f.text()).replace(/[,;]/g,'\t').split(/\r?\n/);
+    else{x.innerHTML='<span style="color:var(--er)">Use a PDF, DOCX, XLSX or CSV file.</span>';return}
+    if(!lines.some(l=>String(l).trim())){x.innerHTML='<span style="color:var(--er)">No readable text found. If this PDF is a scanned picture, export the results as Excel or Word instead.</span>';return}
+    $('#rt').value=lines.join('\n');prevRes();
+  }catch(e){x.innerHTML='<span style="color:var(--er)">'+H(e.message)+'</span>'}
+};
+
+// sheet columns that are not in the courses table: let the admin match them (remembered for next time)
+function mapUI(u){
+  const x=$('#rv');if(!x||!u||!u.length)return;window.MAPCODES=u;
+  const C=window.CRS||{},keys=Object.keys(C).sort(),num=s=>(String(s).match(/\d{3}/)||[''])[0];
+  const box=document.createElement('div');box.className='c';box.style.cssText='margin-top:12px;border-color:var(--am)';
+  box.innerHTML='<h3>Match sheet columns to your courses</h3><p class="mu">These columns are on the sheet, but no course in your list has the same code, so their scores are not included yet. Pick the matching course, or skip the column.</p>'+u.map((c,i)=>{
+    let g=keys.filter(k=>num(k)==num(c));if(g.length>1)g=g.filter(k=>k.slice(0,2)==c.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase());const pre=g.length==1?g[0]:'';
+    return `<div class="row"><b style="min-width:84px">${H(c)}</b><select id="mp${i}" style="flex:1"><option value=""${pre?'':' selected'}>Skip this column</option>${keys.map(k=>`<option value="${H(k)}"${k==pre?' selected':''}>${H(k)} · ${H(C[k].title||'')}</option>`).join('')}</select><button class="s p" onclick="mapCol(${i})">Match</button></div>`}).join('');
+  x.appendChild(box);
+}
+window.mapCol=async function(i){
+  const code=(window.MAPCODES||[])[i],sel=$('#mp'+i);if(!code||!sel)return;
+  const al=window.ALIAS||(window.ALIAS={});al[ck(code)]=sel.value||'-';
+  try{localStorage.setItem('resAlias',JSON.stringify(al))}catch(e){}
+  const r=readSheet(window.SHEET_PAGES,window.CRS);
+  $('#rt').value=r.rows.map(q=>q.reg_num+','+q.course_code+','+q.score).join('\n');
+  await showRes(r.rows,r.issues,r);mapUI(r.unknown);
+};
+
+// pasted rows / CSV / Word / Excel: also accept "UNN-CRE 327" style codes
+const oldParse=window.parseRes;
+window.parseRes=function(lines,C){
+  const C2={...C},AL={};
+  Object.keys(C).forEach(k=>{const m=ck(k).match(/^([A-Z]{3})(\d{3}[A-Z]?)$/);if(m){const a=m[1]+' '+m[2];if(!C2[a]){C2[a]=C[k];AL[a]=k}}});
+  const r=oldParse(lines,C2);
+  r.rows.forEach(q=>{if(AL[q.course_code])q.course_code=AL[q.course_code]});
+  return r;
+};
+function sheetCtx(lines){
+  const c={};
+  for(const raw of lines.slice(0,80)){
+    const t=String(raw).replace(/\s+/g,' ');if(/\d{4}\/\d{6}/.test(t))continue;
+    const m=/\b(20\d{2})\s*[\/\-–]\s*(20\d{2})(?!\d)/.exec(t);if(m&&+m[2]==+m[1]+1&&!c.session)c.session=m[1]+'/'+m[2];
+    if(!c.semester){if(/\b(first|1st|harmattan)\s+semester\b|\bsemester\s*[:\-]?\s*(first|1st|1)\b/i.test(t))c.semester='First';else if(/\b(second|2nd|rain)\s+semester\b|\bsemester\s*[:\-]?\s*(second|2nd|2)\b/i.test(t))c.semester='Second'}
+    if(/carry\s*-?\s*over|\bre-?sit\b/i.test(t))c.type='CARRYOVER';
+  }
+  return c;
+}
+function applyCtx(c){
+  const set=(id,val)=>{const e=$(id);if(!e||!val)return;if(![...e.options].some(o=>o.value==val||o.text==val)){const o=document.createElement('option');o.textContent=val;e.prepend(o)}e.value=val};
+  set('#rs',c.session);set('#rm',c.semester);set('#rtp',c.type);
+}
+window.readSheet=readSheet;
+})();
+</script>
+<script>
+// ===== Manage saved results: edit a score, delete one result, delete a whole upload =====
+(function(){
+const chg=d=>{if(!d||!d.length)throw new Error('Nothing was changed. The database may be blocking this (see the SQL policies).')};
+
+// After a staff search for one student, add an edit/delete card under the transcript
+const oldLk=window.lkRes;
+window.lkRes=async function(){
+  await oldLk();
+  const reg=$('#rl').value.replace(/\s+/g,'');
+  if(isSt()||!REG.test(reg))return;
+  try{
+    const R=ok(await db.from('student_results').select('*').eq('reg_num',reg).order('session').order('course_code'));
+    window.MGR=R;
+    const el=document.createElement('div');el.className='c';
+    el.innerHTML='<h3>Edit or delete results</h3>'+(R.map((r,i)=>`<div class="row"><div><b>${H(r.course_code)}</b><div class="mu">${H(r.session)} · ${H(r.semester)}</div></div><div class="r"><input type="number" min="0" max="100" step="0.5" value="${r.score}" id="ms${i}" style="width:84px;margin:0"><button class="s" onclick="editR(${i})">Save</button><button class="s d" onclick="delR(${i})">✕</button></div></div>`).join('')||'<span class="mu">No saved results.</span>');
+    $('#rl2').appendChild(el);
+  }catch(e){}
+};
+
+window.editR=async function(i){
+  const r=window.MGR[i],s=parseFloat($('#ms'+i).value);
+  if(!(s>=0&&s<=100)){alert('Score must be between 0 and 100.');return}
+  try{
+    chg(ok(await db.from('student_results').update({score:s}).eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).select('reg_num')));
+    await lkRes();
+  }catch(e){alert(e.message)}
+};
+
+window.delR=async function(i){
+  const r=window.MGR[i];
+  if(!confirm('Delete '+r.course_code+' ('+r.session+') for '+r.reg_num+'?'))return;
+  try{
+    chg(ok(await db.from('student_results').delete().eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).select('reg_num')));
+    await lkRes();
+  }catch(e){alert(e.message)}
+};
+
+// Staff results page: add a "delete a whole upload" card
+const oldRes=V.res;
+V.res=async function(){
+  await oldRes();
+  if(isSt())return;
+  let keys=[];
+  try{
+    const S=ok(await db.from('student_results').select('session,semester').range(0,9999));
+    keys=[...new Set(S.map(s=>s.session+'|'+s.semester))].sort().reverse();
+  }catch(e){}
+  $('#v').insertAdjacentHTML('beforeend',`<div class="c"><h3>Delete a whole upload</h3><p class="mu">Removes every saved result for one session and semester. This cannot be undone.</p><select id="bd">${keys.map(k=>`<option value="${H(k)}">${H(k.replace('|',' · '))}</option>`).join('')||'<option value="">Nothing saved yet</option>'}</select><button class="d" onclick="delBatch()">Delete this upload</button><div id="bdx" class="mu" style="margin-top:8px"></div></div>`);
+};
+
+window.delBatch=async function(){
+  const val=$('#bd').value,x=$('#bdx');if(!val)return;
+  const [ses,sem]=val.split('|');
+  if(!confirm('Delete ALL results for '+sem+' semester '+ses+'?'))return;
+  try{
+    const d=ok(await db.from('student_results').delete().eq('session',ses).eq('semester',sem).select('reg_num'));
+    chg(d);x.textContent='Deleted '+d.length+' results.';setTimeout(()=>go('res'),900);
+  }catch(e){x.textContent=e.message}
+};
+})();
+</script>
+<script>
+// ===== Course-rep assignment: only admins and lecturers can assign =====
+(function(){
+TI.rep=['🧑‍🏫','Reps'];
+[NAV.ADMIN,NAV.LECTURER].forEach(n=>{if(!n.includes('rep'))n.splice(n.indexOf('nf'),0,'rep')});
+const staff=()=>isAd()||isLec();
+
+// courses this person may assign reps to: admin = all, lecturer = only the ones they teach
+async function myCourses(){
+  if(isAd())return ok(await db.from('courses').select('id,code,title').order('code'));
+  const L=ok(await db.from('course_lecturers').select('courses(id,code,title)').eq('lecturer_id',me.id));
+  return L.map(x=>x.courses).filter(Boolean).sort((a,b)=>a.code.localeCompare(b.code));
+}
+const mayUse=async cid=>isAd()||(await myCourses()).some(c=>String(c.id)==String(cid));
+
+V.rep=async function(){
+  if(!staff())return v('<div class="c">Only lecturers and admins can manage course reps.</div>');
+  const C=await myCourses(),ids=C.map(c=>c.id);
+  const P=ok(await db.from('course_reps').select('id,full_name,reg_num,level').order('full_name'));
+  const A=ids.length?ok(await db.from('course_rep_assignments').select('*,courses(code,title),course_reps(full_name,reg_num)').in('course_id',ids).order('created_at',{ascending:false})):[];
+  window.RPA=A;
+  v(`<div class="c"><h3>Assign a course rep</h3>${C.length?`<label>Course</label><select id="rc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Course rep</label><select id="rp">${P.map(p=>`<option value="${p.id}">${H(p.full_name)} · ${H(p.reg_num||'')} · ${p.level||'—'}L</option>`).join('')||'<option value="">No course reps have signed up yet</option>'}</select><button class="p" onclick="assignRep()">Assign</button><div id="rpx" class="mu" style="margin-top:8px"></div>`:'<span class="mu">You are not linked to any course yet, so there is nothing to assign.</span>'}</div>
+<div class="c"><h3>Current assignments</h3>${A.map((a,i)=>`<div class="row"><div><b>${H((a.course_reps||{}).full_name||'—')}</b> <span class="tag">${H((a.courses||{}).code||'')}</span><div class="mu">${H((a.course_reps||{}).reg_num||'')} · assigned ${fd(a.created_at)} by ${a.assigned_by_role?RN[a.assigned_by_role]:'—'}</div></div><button class="s d" onclick="unassignRep(${i})">Remove</button></div>`).join('')||'<span class="mu">No course reps assigned yet.</span>'}</div>`);
+};
+
+window.assignRep=async function(){
+  if(!staff())return;
+  const c=$('#rc').value,p=$('#rp').value,x=$('#rpx');
+  if(!c||!p){x.textContent='Choose a course and a course rep.';return}
+  try{
+    if(!(await mayUse(c)))throw new Error('You can only assign reps to courses you teach.');
+    const{error}=await db.from('course_rep_assignments').insert({course_id:c,rep_id:p,assigned_by_id:me.id,assigned_by_role:me.role});
+    if(error)throw new Error(error.code=='23505'?'That rep is already assigned to this course.':error.message);
+    const code=$('#rc').selectedOptions[0].textContent.split(' - ')[0];
+    await notify([{target_user_id:p,title:'Course rep assignment',message:'You are now the course rep for '+code,link_url:'/materials'}]);
+    go('rep');
+  }catch(e){x.textContent=e.message}
+};
+
+window.unassignRep=async function(i){
+  const a=window.RPA[i];
+  if(!staff()||!a||!confirm('Remove this course rep from '+((a.courses||{}).code||'the course')+'?'))return;
+  try{
+    if(!(await mayUse(a.course_id)))throw new Error('You can only change reps for courses you teach.');
+    const d=ok(await db.from('course_rep_assignments').delete().eq('id',a.id).select('id'));
+    if(!d.length)throw new Error('Nothing was removed. The database may be blocking this (see the SQL policy).');
+    go('rep');
+  }catch(e){alert(e.message)}
+};
+
+// Course reps can only upload materials for courses they were assigned to
+const oldMat=V.mat;
+V.mat=async function(){
+  await oldMat();
+  if(me.role!='COURSE_REP')return;
+  const sel=$('#mc');if(!sel)return;
+  const A=ok(await db.from('course_rep_assignments').select('course_id').eq('rep_id',me.id)).map(a=>String(a.course_id));
+  [...sel.options].forEach(o=>{if(!A.includes(o.value))o.remove()});
+  if(!sel.options.length){const card=sel.closest('.c');if(card)card.innerHTML='<h3>Upload PDF</h3><span class="mu">You have not been assigned to a course yet. A lecturer or admin can assign you.</span>'}
+};
+})();
+</script>
+<script>
+// ===== Materials: "✨ Questions" (lecturers/admins) and "✨ Drill" (students) buttons =====
+(function(){
+// admins need the Assess tab to reach the question generator
+if(!NAV.ADMIN.includes('exam'))NAV.ADMIN.splice(Math.max(NAV.ADMIN.indexOf('mat')+1,1),0,'exam');
+
+const oldMat=V.mat;
+V.mat=async function(){
+  await oldMat();
+  if(me.role=='COURSE_REP')return;
+  let M=[];
+  try{M=ok(await db.from('course_materials').select('id,file_url'))}catch(e){return}
+  const byUrl={};M.forEach(m=>byUrl[m.file_url]=m.id);
+  document.querySelectorAll('#v .row a[href]').forEach(a=>{
+    const id=byUrl[a.getAttribute('href')],box=a.parentElement;
+    if(!id||!box||box.querySelector('.aib'))return;
+    const b=document.createElement('button');
+    b.className='s p aib';b.textContent=isSt()?'✨ Drill':'✨ Questions';
+    b.onclick=()=>isSt()?matDrill(id):matGen(id);
+    box.insertBefore(b,a);
+  });
+};
+
+// Student: open the drill screen with this material chosen and start straight away
+window.matDrill=async function(id){
+  tab='exam';await R();
+  const s=$('#dm');
+  if(!s){return}
+  s.value=id;
+  if(s.value!=id){alert('That material is not available for drills.');return}
+  startDrill();
+};
+
+// Lecturer/admin: open the question generator with this material chosen
+window.matGen=async function(id){
+  tab='exam';await R();
+  const s=$('#qm');
+  if(!s)return;
+  s.value=id;
+  s.scrollIntoView({behavior:'smooth',block:'center'});
+};
+})();
+</script>
+<script>
+window.callAI=async function(task,p){
+  const r=await db.functions.invoke('ai',{body:{task,...p}});
+  if(r.error){
+    let d=r.error.message||'Request failed';
+    try{
+      const c=r.error.context;
+      if(c&&c.status)d+=' (HTTP '+c.status+')';
+      if(c&&c.json){const b=await c.json();d+=': '+(b.error||b.message||JSON.stringify(b))}
+    }catch(e){}
+    throw new Error(d);
+  }
+  if(r.data&&r.data.error)throw new Error(r.data.error);
+  return r.data;
+};
+</script>
+<script>
+// ===== Profile page: edit email, phone and password =====
+V.prof=async()=>{
+const r=ok(await db.from(TB[me.role]).select('*').eq('id',me.id).limit(1))[0];
+if(!r)throw new Error('Account not found. Please sign in again.');
+const ro=(l,x)=>x?`<div><label>${l}</label><div style="padding:6px 0 10px">${H(x)}</div></div>`:'';
+v(`<div class="c"><h3>Your details</h3><div class="g">${ro('Name',r.full_name)}${ro('Registration number',r.reg_num)}${ro('Role',RN[me.role])}${ro('Level',r.level)}</div><p class="mu" style="margin:4px 0 0">Your name and registration number are set by the department. Contact an admin if they are wrong.</p></div>
+<div class="c"><h3>Contact details</h3><label for="pe">Email</label><input id="pe" type="email" autocapitalize="none" autocomplete="email" value="${H(r.email||'')}"><label for="pp">Phone number</label><input id="pp" type="tel" autocomplete="tel" value="${H(r.phone_number||'')}"><div id="pm1" class="mu" role="status" style="min-height:20px;margin-bottom:8px"></div><button class="p" onclick="saveContact()">Save contact details</button></div>
+<div class="c"><h3>Change password</h3><label for="pc">Current password</label><input id="pc" type="password" autocomplete="current-password"><label for="pn">New password</label><input id="pn" type="password" autocomplete="new-password"><label for="pq">Confirm new password</label><input id="pq" type="password" autocomplete="new-password"><div id="pm2" class="mu" role="status" style="min-height:20px;margin-bottom:8px"></div><button class="p" onclick="savePw()">Update password</button></div>`)};
+const pSay=(id,t,good)=>{const m=$(id);if(m){m.textContent=t;m.style.color=good?'var(--gr)':'var(--er)'}};
+async function saveContact(){
+const e=$('#pe').value.trim().toLowerCase(),p=$('#pp').value.trim(),say=(t,g)=>pSay('#pm1',t,g);
+if(e&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return say('Enter a valid email address.');
+if(!e&&me.role!='STUDENT')return say('Email is required.');
+if(p&&!/^[0-9+()\-\s]{6,20}$/.test(p))return say('Enter a valid phone number.');
+if(!p&&me.role=='LECTURER')return say('Phone number is required.');
+try{const x=await db.from(TB[me.role]).update({email:e||null,phone_number:p||null}).eq('id',me.id).select('id');
+if(x.error)return say(x.error.code=='23505'?'That email is already used by another account.':x.error.message);
+if(!x.data||!x.data.length)return say('Could not save. Please try again.');
+me.email=e||null;me.phone=p||null;localStorage.setItem('sess',JSON.stringify(me));say('Saved.',1)}catch(x){say(x.message)}}
+async function savePw(){
+const a=$('#pc').value,b=$('#pn').value,c=$('#pq').value,say=(t,g)=>pSay('#pm2',t,g);
+if(!a)return say('Enter your current password.');
+if(b.length<6)return say('New password must be at least 6 characters.');
+if(b!==c)return say('New passwords do not match.');
+if(b===a||b==='student123')return say('Choose a new password that is different from your current and default one.');
+try{const cur=ok(await db.from(TB[me.role]).select('password_hash').eq('id',me.id).limit(1))[0];
+if(!cur||cur.password_hash!==a)return say('Current password is incorrect.');
+const x=await db.from(TB[me.role]).update({password_hash:b}).eq('id',me.id).select('id');
+if(x.error)return say(x.error.message);
+if(!x.data||!x.data.length)return say('Could not update. Please try again.');
+['#pc','#pn','#pq'].forEach(i=>$(i).value='');say('Password updated.',1)}catch(x){say(x.message)}}
+</script>
+<style id="pwa-css">
+#pwaOff{position:fixed;left:0;right:0;top:0;z-index:9999;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;background:#a35e00;color:#fff;font:600 13px/1.3 system-ui,sans-serif;text-align:center;transform:translateY(-110%);transition:transform .25s}
+#pwaOff.on{transform:none}
+#pwaInst{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border:0;border-radius:999px;background:var(--ac,#5846e6);color:#fff;font:600 14px/1 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer}
+#pwaInst[hidden]{display:none}
+#pwaInst b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.22);font-size:12px}
+@media(display-mode:standalone){#pwaInst{display:none}}
+</style>
+<script id="pwa-js">
+(function(){
+  if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+  var bar=document.createElement('div');bar.id='pwaOff';bar.setAttribute('role','status');bar.textContent='You are offline. Sign-in and live data need internet.';document.body.appendChild(bar);
+  var syncBar=function(){bar.classList.toggle('on',!navigator.onLine)};addEventListener('online',syncBar);addEventListener('offline',syncBar);syncBar();
+  var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  var dismissed=false;try{dismissed=localStorage.getItem('pwaDismiss')==='1'}catch(e){}
+  if(standalone||dismissed)return;
+  var dp=null,chip=document.createElement('button');
+  chip.id='pwaInst';chip.type='button';chip.hidden=true;chip.innerHTML='<span>Install app</span><b aria-label="Dismiss">\u2715</b>';
+  document.body.appendChild(chip);
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+  if(ios)chip.hidden=false;
+  addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;chip.hidden=false});
+  addEventListener('appinstalled',function(){chip.hidden=true;dp=null});
+  chip.addEventListener('click',function(e){
+    if(e.target.tagName==='B'){chip.hidden=true;try{localStorage.setItem('pwaDismiss','1')}catch(x){}return}
+    if(dp){dp.prompt();dp.userChoice.then(function(){dp=null;chip.hidden=true}).catch(function(){})}
+    else if(ios){alert('To install: tap the Share button in Safari, then choose "Add to Home Screen".')}
+  });
+})();
+</script>
+</body>
+</html>
