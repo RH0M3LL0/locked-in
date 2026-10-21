@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "CS & Robotics Portal",
-  "short_name": "CS Portal",
+  "name": "Computer & Robotics Portal",
+  "short_name": "CRE Portal",
   "description": "Departmental portal for Computer & Robotics Education: courses, materials, assessments, results, calendar and tickets.",
   "lang": "en",
   "start_url": "./",
