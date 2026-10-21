@@ -2,7 +2,7 @@
 // - Page (navigation): network first, falls back to the saved copy when offline or slow.
 // - Own static files and CDN scripts/fonts: served from cache, refreshed in the background.
 // - Supabase API calls and anything else: never touched, always go to the network.
-const VERSION = "cre-portal-v3";
+const VERSION = "cre-portal-v4";
 const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 const CDN = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const ROOT = new URL("./", self.location).href;
@@ -77,4 +77,15 @@ self.addEventListener("fetch", (event) => {
   if (url.origin === self.location.origin || CDN.includes(url.hostname)) {
     event.respondWith(staleWhileRevalidate(req));
   }
+});
+
+// Tapping a phone notification opens (or returns to) the portal.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) if ("focus" in c) return c.focus();
+      return self.clients.openWindow("./");
+    })
+  );
 });
