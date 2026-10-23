@@ -8,8 +8,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0b1020",
-  "theme_color": "#0b1020",
+  "background_color": "#0b3d27",
+  "theme_color": "#0b3d27",
   "categories": [
     "education"
   ],
@@ -77,7 +77,7 @@
       "sizes": "780x1688",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Everything in one place"
+      "label": "Your modules in one place"
     },
     {
       "src": "screenshots/narrow-results.png",
