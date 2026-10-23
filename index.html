@@ -482,7 +482,7 @@ function authView(){return`<h1 class="sr">Computer and Robotics Education Portal
 <li><b>Calendar and reminders:</b> exam dates, deadlines and alerts before they happen.</li>
 <li><b>Support:</b> ask the AI assistant first, then send a ticket to the admin if you still need help.</li></ul>
 <p>Students sign in with their registration number. Lecturers and admins sign in with their email.</p></section>`}
-function lh(){const r=$('#lr').value;$('#ll').textContent=r=='LECTURER'?'Email or phone number':r=='ADMIN'?'Registration number':'Registration number'}
+function lh(){const r=$('#lr').value;$('#ll').textContent=r=='LECTURER'?'Email or phone number':r=='ADMIN'?'Registration number or email':'Registration number'}
 const msg=(t,c)=>{const e=$('#er');if(e){e.className='tag '+(c||'er');e.style.background='none';e.textContent=t}};
 function terms(){modal(`<h3>Terms & Conditions</h3><p class="mu">By using this portal you agree to: keep your login details private; use materials and assessments only for your coursework; not share assessment passcodes or answers; and accept that activity on the portal may be reviewed by department staff. Misuse can lead to account suspension.</p><button class="p" onclick="closeM()">Close</button>`)}
 async function find(role,id){const t=TB[role];if(role=='LECTURER'){if(!/^[\w.@+\- ]+$/.test(id))return null;return ok(await db.from(t).select('*').or(`email.eq.${id},phone_number.eq.${id}`).limit(1))[0]}
