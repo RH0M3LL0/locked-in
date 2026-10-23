@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# After you know your site address, add this line (replace with your real address):
+# Sitemap: https://YOUR-SITE-ADDRESS/sitemap.xml
