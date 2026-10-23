@@ -1,1 +1,31 @@
+PWA ICON SETUP  (put all files in /icons or site root and adjust paths)
 
+--- <head> ---
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b5d45">
+
+--- manifest.webmanifest "icons" ---
+"icons": [
+  { "src": "/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
+  { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+],
+"background_color": "#0b5d45",
+"theme_color": "#0b5d45"
+
+--- Loading gear (loading-gear.svg) ---
+The SVG is static on purpose: spinning the <img> with CSS runs on the GPU, which is
+much smoother on slow Android phones and iPhones than animating inside the SVG.
+<style>@keyframes sp{to{transform:rotate(360deg)}}
+.gear{animation:sp 2.4s linear infinite;will-change:transform}
+@media (prefers-reduced-motion:reduce){.gear{animation:none}}</style>
+<img class="gear" src="/loading-gear.svg" alt="" width="64" height="64">
+
+--- reps-tab-icon.svg ---
+Monochrome 24x24 icon using currentColor, so it follows your tab bar's
+active/inactive text color. Inline the SVG or use it as a CSS mask.
+
+--- Palette ---
+Green  #1f9d6b -> #0b5d45   Gold #ffc533   Dark #14262b   Blue #2a7bd6
