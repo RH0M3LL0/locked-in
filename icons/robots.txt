@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://computer-and-robotics-education.vercel.app/sitemap.xml
