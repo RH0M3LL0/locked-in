@@ -471,17 +471,48 @@ const grade=s=>s>=70?['A',5]:s>=60?['B',4]:s>=50?['C',3]:s>=45?['D',2]:s>=40?['E
 const notify=(rows)=>db.from('notifications').insert(rows);
 function modal(h){$('#mb').innerHTML=h;$('#md').classList.add('on')}function closeM(){if(window.PWF){if(!$('#fpN'))forcePw();return}$('#md').classList.remove('on')}
 // ---------- Auth ----------
-function authView(){return`<h1 class="sr">Computer and Robotics Education Portal</h1><div class="lw c"><img src="icons/logo.svg" alt="" width="68" height="68" style="display:block;border-radius:19px;margin:0 0 14px;box-shadow:0 10px 26px rgba(15,81,50,.35)"><h2 style="margin:0 0 4px;color:var(--tx)">Sign in</h2><p class="mu" style="margin-top:0">Computer and Robotics Education Department • Secure Portal</p>${CFG.URL.includes('YOUR-PROJECT')?'<div class="tag er" style="margin-bottom:10px">Set CFG.URL and CFG.KEY at the top of the script.</div>':''}
+
+// ===== Landing page: the first thing a signed-out visitor sees. The installed app skips it. =====
+function landOn(){
+  if(window.LAND===undefined){
+    const sa=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+    window.LAND=!(sa||/[?&#]login|#signin/i.test(location.search+location.hash));
+  }
+  return window.LAND;
+}
+function showAuth(mode){window.LAND=false;R();if(mode==='signup')signup();window.scrollTo(0,0)}
+function showLanding(){window.LAND=true;R();window.scrollTo(0,0)}
+function landingView(){
+  const F=[['res','Results and CGPA','See your scores, grades and cumulative GPA for every session.'],
+           ['mat','Course materials','Download lecture PDFs and read AI-written summaries.'],
+           ['exam','Tests and practice','Take timed tests set by your lecturers and practise with AI drills.'],
+           ['cal','Calendar and reminders','Exam dates, deadlines and alerts before they happen.'],
+           ['tk','Support that starts with AI','Ask the AI assistant first, then send a ticket to the admin if you still need help.']];
+  const btns=(c)=>`<button class="ln-btn gold" onclick="showAuth()">Log in</button><button class="ln-btn ${c||'line'}" onclick="showAuth('signup')">Create account</button>`;
+  return`<div class="ln">
+<div class="ln-top" role="banner"><a class="ln-brand" href="./" aria-label="Computer and Robotics Education Portal home"><img src="icons/logo.svg" width="38" height="38" alt=""><span class="ln-name"><span class="full">Computer and Robotics Education Portal</span><span class="short">CRE Portal</span></span></a><div class="ln-act"><button class="ln-btn ghost" onclick="showAuth()">Log in</button><button class="ln-btn gold" onclick="showAuth('signup')">Create account</button></div></div>
+<main>
+<section class="ln-hero"><div class="ln-copy"><span class="hchip">University of Nigeria, Nsukka</span>
+<h1><span class="ln-k">Computer and Robotics Education Portal</span><span class="ln-t">Learn to code.<br>Learn to build.<br>Learn to teach.</span></h1>
+<p>The portal of the Department of Computer and Robotics Education, Faculty of Vocational and Technical Education, University of Nigeria, Nsukka.</p>
+<div class="ln-cta">${btns('line')}</div></div>
+<div class="ln-art" aria-hidden="true"><img src="icons/logo.svg" width="230" height="230" alt=""></div></section>
+<section class="ln-sec" aria-labelledby="abt-h"><h2 id="abt-h">About the Computer and Robotics Education Portal</h2>
+<p class="ln-lead">Everything you need for your courses, in one place on your phone or computer.</p>
+<div class="ln-grid">${F.map(f=>`<article class="ln-card"><i>${ico(f[0],22)}</i><h3>${f[1]}</h3><p>${f[2]}</p></article>`).join('')}</div></section>
+<section class="ln-sec" aria-labelledby="how-h"><h2 id="how-h">Getting started</h2>
+<ol class="ln-steps"><li><b>Create your account.</b><span>Students use their registration number. Lecturers and admins use their email.</span></li>
+<li><b>Log in.</b><span>Use the password you chose. You can reset it by email if you forget it.</span></li>
+<li><b>Open your modules.</b><span>Results, materials, tests, calendar and support are one tap away.</span></li></ol>
+<div class="ln-band"><div><h3>Ready to start?</h3><p>Students sign in with their registration number. Lecturers and admins sign in with their email.</p></div><div class="ln-cta">${btns('line')}</div></div></section>
+</main>
+<footer class="ln-foot"><p>Department of Computer and Robotics Education · Faculty of Vocational and Technical Education · University of Nigeria, Nsukka</p><p><button class="lnk" onclick="showAuth()">Log in</button> · <button class="lnk" onclick="showAuth('signup')">Create account</button></p></footer>
+</div>`;
+}
+function authView(){return`<h1 class="sr">Computer and Robotics Education Portal</h1><button class="lnk ln-back" onclick="showLanding()">← Back to home</button><div class="lw c"><img src="icons/logo.svg" alt="" width="68" height="68" style="display:block;border-radius:19px;margin:0 0 14px;box-shadow:0 10px 26px rgba(15,81,50,.35)"><h2 style="margin:0 0 4px;color:var(--tx)">Sign in</h2><p class="mu" style="margin-top:0">Computer and Robotics Education Department • Secure Portal</p>${CFG.URL.includes('YOUR-PROJECT')?'<div class="tag er" style="margin-bottom:10px">Set CFG.URL and CFG.KEY at the top of the script.</div>':''}
 <label>I am a</label><select id="lr" onchange="lh()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="ll">Registration number</label><input id="li" autocapitalize="none" autocomplete="username"><label>Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="event.key=='Enter'&&login()">
 <div id="er" class="tag er" style="background:none;padding:0;border:0"></div>
-<button class="p" style="width:100%;margin-top:8px" onclick="login()">Sign in →</button><div class="r" style="justify-content:space-between;margin-top:14px"><button class="lnk" onclick="fp()">Forgot password?</button><button class="lnk" onclick="signup()">Create account</button></div></div><section class="abt" aria-labelledby="abt-h"><h2 id="abt-h">About the Computer and Robotics Education Portal</h2>
-<p>The portal of the Department of Computer and Robotics Education, Faculty of Vocational and Technical Education, University of Nigeria, Nsukka.</p>
-<ul><li><b>Results and CGPA:</b> see your scores, grades and cumulative GPA for every session.</li>
-<li><b>Course materials:</b> download lecture PDFs and read AI-written summaries.</li>
-<li><b>Tests and practice:</b> take timed tests set by your lecturers and practise with AI drills.</li>
-<li><b>Calendar and reminders:</b> exam dates, deadlines and alerts before they happen.</li>
-<li><b>Support:</b> ask the AI assistant first, then send a ticket to the admin if you still need help.</li></ul>
-<p>Students sign in with their registration number. Lecturers and admins sign in with their email.</p></section>`}
+<button class="p" style="width:100%;margin-top:8px" onclick="login()">Sign in →</button><div class="r" style="justify-content:space-between;margin-top:14px"><button class="lnk" onclick="fp()">Forgot password?</button><button class="lnk" onclick="signup()">Create account</button></div></div>`}
 function lh(){const r=$('#lr').value;$('#ll').textContent=r=='LECTURER'?'Email or phone number':r=='ADMIN'?'Registration number or email':'Registration number'}
 const msg=(t,c)=>{const e=$('#er');if(e){e.className='tag '+(c||'er');e.style.background='none';e.textContent=t}};
 function terms(){modal(`<h3>Terms & Conditions</h3><p class="mu">By using this portal you agree to: keep your login details private; use materials and assessments only for your coursework; not share assessment passcodes or answers; and accept that activity on the portal may be reviewed by department staff. Misuse can lead to account suspension.</p><button class="p" onclick="closeM()">Close</button>`)}
@@ -510,7 +541,7 @@ if(a.length<6)return fpSay('New password must be at least 6 characters.');
 if(a!==b)return fpSay('The two passwords do not match.');
 btn.disabled=true;fpSay('Changing…',1);
 try{await fpCall({action:'confirm',role:FPS.role,id:FPS.id,code,password:a});FPS={};closeM();msg('Password changed. Sign in with your new password.','ok')}catch(e){fpSay(e.message);btn.disabled=false}}
-function signup(){$('#app').innerHTML=`<div class="lw c"><h2 style="margin:0 0 8px;color:var(--tx)">Create account</h2><label>I am a</label><select id="sr" onchange="sf()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label>Full name</label><input id="sn" autocomplete="name"><label>Email</label><input id="se" type="email" autocapitalize="none"><label>Phone number</label><input id="sh" type="tel"><div id="sx"></div><label>Password</label><input id="sp" type="password" autocomplete="new-password"><label>Confirm password</label><input id="sq" type="password" autocomplete="new-password">
+function signup(){$('#app').innerHTML=`<div class="lw c"><button class="lnk ln-back" onclick="showLanding()" style="margin-bottom:8px">← Back to home</button><h2 style="margin:0 0 8px;color:var(--tx)">Create account</h2><label>I am a</label><select id="sr" onchange="sf()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label>Full name</label><input id="sn" autocomplete="name"><label>Email</label><input id="se" type="email" autocapitalize="none"><label>Phone number</label><input id="sh" type="tel"><div id="sx"></div><label>Password</label><input id="sp" type="password" autocomplete="new-password"><label>Confirm password</label><input id="sq" type="password" autocomplete="new-password">
 <label style="display:flex;align-items:center;color:var(--tx);margin:10px 0"><input type="checkbox" id="lt">I agree to the&nbsp;<button class="lnk" onclick="terms()">Terms & Conditions</button></label><div id="er" class="tag er" style="background:none;padding:0;border:0"></div><button class="p" style="width:100%;margin-top:8px" onclick="reg()">Create account →</button><button class="lnk" onclick="R()">Back to sign in</button></div>`;sf()}
 function sf(){const r=$('#sr').value;$('#sx').innerHTML=(r=='LECTURER'?`<label>Designation</label><input id="sd" placeholder="e.g. Senior Lecturer"><label>Office location</label><input id="so">`:`<label>Registration number (YYYY/XXXXXX)</label><input id="sg" placeholder="2023/259021">`+(r=='ADMIN'?'':`<label>Level</label><select id="sl">${[100,200,300,400,500].map(x=>`<option>${x}</option>`)}</select>`))+(r=='STUDENT'?'':`<label>Sign-up code (from the department)</label><input id="sc" autocapitalize="none">`)}
 async function reg(){const g=i=>($('#'+i)?$('#'+i).value:'').trim(),r=g('sr');
@@ -521,7 +552,7 @@ if(r=='LECTURER'){row.designation=g('sd')||'Lecturer';row.office_location=g('so'
 const{error}=await db.from(TB[r]).insert(row);if(error)return msg(error.code=='23505'?'That registration number, email or phone is already registered.':error.message);
 await R();msg('Account created. Sign in below.','ok')}
 // ---------- Shell ----------
-async function R(){clearInterval(tm);if(me&&!NAV[me.role]){me=null;localStorage.removeItem('sess')}const a=$('#app');document.body.classList.toggle('in',!!me);document.body.classList.toggle('out',!me);if(!me){window.stopAlerts&&stopAlerts();a.innerHTML=authView();document.getElementById('ld').classList.add('x');return}window.startAlerts&&startAlerts();window.pwGate&&pwGate();
+async function R(){clearInterval(tm);if(me&&!NAV[me.role]){me=null;localStorage.removeItem('sess')}const a=$('#app');document.body.classList.toggle('in',!!me);document.body.classList.toggle('out',!me);if(!me){window.stopAlerts&&stopAlerts();const L=landOn();document.body.classList.toggle('land',L);a.innerHTML=L?landingView():authView();document.getElementById('ld').classList.add('x');return}document.body.classList.remove('land');window.startAlerts&&startAlerts();window.pwGate&&pwGate();
 if(me.role=='STUDENT'&&(window.REPOF===undefined||tab=='home')){try{window.REPOF=ok(await db.rpc('student_rep_info',{p_student:me.id}))}catch(e){window.REPOF=window.REPOF||[]}}
 let nv=NAV[me.role];if(me.role=='STUDENT'&&(window.REPOF||[]).length)nv=nv.flatMap(k=>k=='exam'?['exam','rdesk']:[k]);window.NV=nv;if(!nv.includes(tab)&&tab!='prof')tab='home';
 a.innerHTML=shell(nv);
@@ -1223,14 +1254,15 @@ async function askTk(){
   const T=window.TKC=window.TKC||[];
   const hist=T.slice(-6);T.push({role:'user',text:t});$('#ka').value='';window.TKA=[];
   if(btn)btn.disabled=true;tkRender(true);
+  clearTimeout(window.TKW);window.TKW=setTimeout(()=>{const x=document.querySelector('#kao .tkb.a.mu');if(x)x.textContent='Still working, this can take a few seconds…'},6000);
   try{
-    if(!window.TKF||Date.now()-window.TKFt>3e5){window.TKF=await tkFacts();window.TKFt=Date.now()}
+    if(!window.TKF||Date.now()-window.TKFt>3e5){let f=null;try{f=await (window.TKFp||tkFacts())}catch(e){}if(!f)f=await tkFacts();window.TKF=f;window.TKFt=Date.now();window.TKFp=null}
     const d=await callAI('ticket_help',{text:t,context:window.TKF,history:hist});
     T.push({role:'ai',text:d.answer||'Sorry, I could not work that out. Please raise a ticket below.'});
     window.TKA=(d.actions||[]).filter(a=>a&&((a.type=='open_page'&&TK_PAGES[a.page])||(a.type=='ticket'&&a.subject&&a.message)||(a.type=='set_email'&&emailOk(a.email)))).slice(0,3);
     if(!window.TKA.length&&d.ticket&&d.ticket.subject)window.TKA=[Object.assign({type:'ticket'},d.ticket)];
   }catch(e){T.push({role:'ai',text:e.message});}
-  if(btn)btn.disabled=false;tkRender(false);
+  clearTimeout(window.TKW);if(btn)btn.disabled=false;tkRender(false);
 }
 
 // ===== AI summary of course PDFs =====
@@ -1722,6 +1754,66 @@ if(!x.data||!x.data.length)return say('Could not update. Please try again.');
 ['#pc','#pn','#pq'].forEach(i=>$(i).value='');say('Password updated.',1)}catch(x){say(x.message)}}
 </script>
 <style id="pwa-css">
+
+/* ---- landing page ---- */
+body.out.land #app{display:block!important;max-width:none!important;margin:0!important;padding:0!important;min-height:100dvh}
+body.out.land #app::before,body.out.land #app::after{display:none!important}
+body.out.land #app>*{grid-column:auto!important}
+.ln{color:var(--tx);font-size:16px;line-height:1.55}
+.ln button{font:inherit}
+.ln-top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px max(16px,calc((100% - 1100px)/2));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.ln-brand{display:flex;align-items:center;gap:10px;color:var(--tx);text-decoration:none;min-width:0}
+.ln-brand img{border-radius:11px;flex:none}
+.ln-name{font-size:15px;font-weight:700;line-height:1.2;white-space:nowrap;letter-spacing:-.01em}.ln-name .short{display:none}
+.ln-act{display:flex;gap:8px;flex:none}
+.ln-btn{border:2px solid transparent;border-radius:14px;padding:11px 20px;min-height:46px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ln-top .ln-btn{padding:8px 16px;min-height:40px;font-size:14px}
+.ln-btn.gold{background:var(--gold,#f5b301);color:#1b1500}
+.ln-btn.gold:hover{filter:brightness(1.07)}
+.ln-btn.line{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+.ln-btn.line:hover{background:rgba(255,255,255,.12)}
+.ln-btn.ghost{background:transparent;color:var(--tx);border-color:var(--border-2)}
+.ln-btn.ghost:hover{background:var(--surface-2)}
+.ln-hero{position:relative;overflow:hidden;max-width:1100px;margin:18px auto 0;border-radius:28px;padding:clamp(26px,5vw,60px);background:linear-gradient(135deg,#0b3d27 0%,#14714a 58%,#1d4ed8 150%);color:#fff;display:grid;grid-template-columns:1.25fr .75fr;gap:24px;align-items:center;width:calc(100% - 28px)}
+.ln-hero::before{content:"";position:absolute;right:-70px;top:-70px;width:260px;height:260px;border-radius:50%;background:rgba(245,179,1,.28)}
+.ln-hero::after{content:"";position:absolute;left:-60px;bottom:-90px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
+.ln-copy,.ln-art{position:relative;z-index:1}
+.ln-hero .hchip{display:inline-flex;background:rgba(255,255,255,.16);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;margin-bottom:14px}
+.ln-hero h1{margin:0;display:flex;flex-direction:column;gap:12px}
+.ln-k{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:#ffd45e;font-weight:700}
+.ln-t{font:800 clamp(34px,6.4vw,64px)/1.02 var(--fd,inherit)}
+.ln-hero p{margin:18px 0 0;max-width:560px;font-size:clamp(16px,2vw,19px);color:rgba(255,255,255,.9)}
+.ln-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.ln-art{display:flex;justify-content:center}
+.ln-art img{width:min(230px,100%);height:auto;border-radius:52px;box-shadow:0 30px 60px rgba(0,0,0,.4);transform:rotate(-4deg)}
+.ln-sec{max-width:1100px;margin:44px auto 0;padding:0 18px}
+.ln-sec h2{margin:0;font-size:clamp(24px,3.4vw,32px);letter-spacing:-.01em}
+.ln-lead{margin:8px 0 20px;color:var(--tx2);font-size:17px}
+.ln-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.ln-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px}
+.ln-card i{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:color-mix(in srgb,var(--ac2) 18%,transparent);color:var(--ac2);margin-bottom:12px}
+.ln-card h3{margin:0 0 6px;font-size:17px}.ln-card p{margin:0;color:var(--tx2);font-size:15px}
+.ln-steps{list-style:none;counter-reset:s;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ln-steps li{counter-increment:s;position:relative;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px 20px 20px 70px}
+.ln-steps li::before{content:counter(s);position:absolute;left:18px;top:18px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--gold,#f5b301);color:#1b1500;font-weight:800}
+.ln-steps b{display:block;margin-bottom:2px}.ln-steps span{color:var(--tx2);font-size:15px}
+.ln-band{margin-top:18px;border-radius:24px;padding:26px;background:linear-gradient(135deg,#0b3d27,#14714a);color:#fff;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.ln-band h3{margin:0 0 4px;font-size:22px}.ln-band p{margin:0;color:rgba(255,255,255,.88)}
+.ln-band .ln-cta{margin:0}
+.ln-foot{max-width:1100px;margin:36px auto 0;padding:22px 18px 36px;border-top:1px solid var(--border);color:var(--tx2);font-size:14px;text-align:center}
+.ln-foot p{margin:6px 0}
+.ln-back{margin-bottom:8px}
+@media(max-width:760px){
+  .ln-hero{grid-template-columns:1fr;border-radius:22px;margin-top:12px}
+  .ln-art{display:none}
+  .ln-name .full{display:none}.ln-name .short{display:inline}
+  .ln-top .ln-btn{padding:8px 12px;font-size:13px}
+  .ln-top{gap:8px}
+  .ln-cta .ln-btn{flex:1 1 150px}
+  .ln-sec{margin-top:34px}
+}
+@media(max-width:360px){.ln-top .ln-btn{padding:8px 10px;font-size:13px}}
+@media(prefers-reduced-motion:no-preference){.ln-card,.ln-steps li{transition:transform .2s}.ln-card:hover{transform:translateY(-3px)}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 body.out #app .abt{grid-column:1/-1!important;grid-row:2!important;justify-self:center;max-width:820px;width:100%;margin:26px 0 8px;padding:0 6px;color:var(--tx2);font-size:14px;line-height:1.6}
 .abt h2{font-size:16px;color:var(--tx);margin:0 0 6px}
@@ -1991,11 +2083,20 @@ window.compForm=function(t){
     if(['General','Results','Account','Materials','Tests','Other'].includes(t.category)&&g('#cmC'))g('#cmC').value=t.category;
   },80);
 };
+window.tkWarm=function(){
+  try{
+    if(!window.TKP||Date.now()-window.TKP>24e4){window.TKP=Date.now();db.functions.invoke('ai',{body:{task:'ping'}}).catch(()=>{})}
+    if(!window.TKFp&&(!window.TKF||Date.now()-(window.TKFt||0)>3e5))window.TKFp=tkFacts().catch(()=>null);
+  }catch(e){}
+};
 window.compOpen=function(){
+  tkWarm();
   modal(`<h3>✨ Talk to the AI first</h3><p class="mu" style="margin-top:0">Tell the AI what went wrong. It can see your results, tests and calendar and can often fix the problem straight away. If it cannot, you can send it to the admin right after.</p><textarea id="ka" rows="3" placeholder="e.g. My CRE 399 result is missing"></textarea><div class="r"><button class="p" id="kab" onclick="askTk()">Ask</button><button onclick="closeM()">Close</button></div><div id="kao"></div>`);
   tkRender(false);
   setTimeout(()=>{const i=document.querySelector('#ka');i&&i.focus()},60);
 };
+const oldTk=V.tk;
+V.tk=async function(){const r=await oldTk.apply(this,arguments);try{if(isSt())tkWarm()}catch(e){}return r};
 window.tkToAdmin=function(){
   const T=window.TKC||[],last=(window.TKA||[]).find(a=>a.type=='ticket'),mine=T.filter(m=>m.role=='user').map(m=>m.text);
   const t=last||{subject:(mine[0]||'Problem').slice(0,80),message:mine.join('\n\n').slice(0,1500),priority:'MEDIUM',category:'General'};
