@@ -899,11 +899,16 @@ const qText=qs=>qs.map((q,i)=>`${i+1}. ${q.q}\n`+(q.type=='short'?`   Model answ
 const RAD='style="width:18px;height:18px;margin:0 10px 0 0;flex:none"';
 
 V.exam=async function(){
-  const M=ok(await db.from('course_materials').select('id,title,is_public,courses(code,title)').order('created_at',{ascending:false}));
+  const M=ok(await db.from('course_materials').select('id,title,is_public,course_id,courses(code,title)').order('created_at',{ascending:false}));
   const opt=M.filter(m=>!isSt()||m.is_public).map(m=>`<option value="${m.id}">${H((m.courses||{}).code||'')} - ${H((m.courses||{}).title||'')} · ${H(m.title)}</option>`).join('');
   if(isSt()){
+    const PM=M.filter(m=>m.is_public),CM={};
+    PM.forEach(m=>{const c=m.courses||{};(CM[m.course_id]=CM[m.course_id]||{id:m.course_id,code:c.code||'',title:c.title||'',n:0}).n++});
+    const DC=Object.values(CM).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
+    const dsel=window.DCSEL&&DC.some(c=>String(c.id)==String(window.DCSEL))?String(window.DCSEL):'';
+    const dopt=PM.filter(m=>String(m.course_id)==dsel).map(m=>`<option value="${m.id}">${H(m.title)}</option>`).join('');
     const A=ok(await db.from('drill_attempts').select('*').eq('reg_num',me.reg).order('created_at',{ascending:false}).limit(8));
-    v(`<div id="stt"></div><div class="c"><h3>✨ AI drill test</h3><p class="mu">Pick a course material. The AI writes practice questions from that PDF, scores you at the end and explains every answer. Drill scores are for practice only and do not count towards your results.</p>${opt?`<label>Material</label><select id="dm">${opt}</select><div class="g"><div><label>Questions</label><select id="dn"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div><div><label>Difficulty</label><select id="dd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="startDrill()">Start drill</button>`:'<span class="mu">No materials have been uploaded yet.</span>'}</div><div id="dz"></div><div class="c"><h3>My recent drills</h3>${A.map(a=>`<div class="row"><div><b>${H(a.material_title||'')}</b><div class="mu">${fd(a.created_at)}</div></div><span class="tag ${a.score/a.total>=.5?'ok':'er'}">${a.score}/${a.total}</span></div>`).join('')||'<span class="mu">No drills yet.</span>'}</div>`);
+    v(`<div id="stt"></div><div class="c"><h3>✨ AI drill test</h3><p class="mu">Pick a course material. The AI writes practice questions from that PDF, scores you at the end and explains every answer. Drill scores are for practice only and do not count towards your results.</p>${opt?`<label for="dc">Choose a course</label><select id="dc" onchange="dcPick(this.value)"><option value="">Select a course…</option>${DC.map(c=>`<option value="${c.id}"${String(c.id)==dsel?' selected':''}>${H(c.code)} - ${H(c.title)} (${c.n})</option>`).join('')}</select>${dsel?`<label>Material</label><select id="dm">${dopt}</select><div class="g"><div><label>Questions</label><select id="dn"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div><div><label>Difficulty</label><select id="dd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="startDrill()">Start drill</button>`:'<p class="mu" style="margin-bottom:0">Choose a course above to see its materials.</p>'}`:'<span class="mu">No materials have been uploaded yet.</span>'}</div><div id="dz"></div><div class="c"><h3>My recent drills</h3>${A.map(a=>`<div class="row"><div><b>${H(a.material_title||'')}</b><div class="mu">${fd(a.created_at)}</div></div><span class="tag ${a.score/a.total>=.5?'ok':'er'}">${a.score}/${a.total}</span></div>`).join('')||'<span class="mu">No drills yet.</span>'}</div>`);
     loadMyTests();
     return;
   }
@@ -1705,7 +1710,9 @@ V.mat=async function(){
 };
 
 // Student: open the drill screen with this material chosen and start straight away
+window.dcPick=x=>{window.DCSEL=x;R()};
 window.matDrill=async function(id){
+  try{const r=ok(await db.from('course_materials').select('course_id').eq('id',id).limit(1))[0];if(r)window.DCSEL=r.course_id}catch(e){}
   tab='exam';await R();
   const s=$('#dm');
   if(!s){return}
