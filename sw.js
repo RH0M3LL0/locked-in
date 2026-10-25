@@ -2,7 +2,7 @@
 // - Page (navigation): opens instantly from the saved copy and refreshes it in the background.
 // - Own static files and CDN scripts/fonts: served from cache, refreshed in the background.
 // - Supabase API calls and anything else: never touched, always go to the network.
-const VERSION = "cre-portal-v13";
+const VERSION = "cre-portal-v14";
 const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/logo.svg"];
 const CDN = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const ROOT = new URL("./", self.location).href;
@@ -33,15 +33,19 @@ const offlinePage = () =>
   );
 
 async function pageRequest(event) {
+  // Network first so new versions of the portal show immediately; fall back to the saved copy when offline or slow.
   const cache = await caches.open(VERSION);
-  const cached = await cache.match(ROOT);
   const net = fetch(event.request).then((res) => {
     if (res.ok) cache.put(ROOT, res.clone());
     return res;
   });
-  event.waitUntil(net.catch(() => {}));
-  // Saved copy exists: open instantly (no waiting on the network) and refresh it for next time.
-  if (cached) return cached;
+  const slow = new Promise((resolve) => setTimeout(resolve, 4000, null));
+  try {
+    const first = await Promise.race([net, slow]);
+    if (first) return first;
+  } catch (_e) {}
+  const cached = await cache.match(ROOT);
+  if (cached) { event.waitUntil(net.catch(() => {})); return cached; }
   return net.catch(() => offlinePage());
 }
 
