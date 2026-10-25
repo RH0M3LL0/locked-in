@@ -819,10 +819,30 @@ async function lkRes(){
 
 // ===== Materials: "CODE - Title" dropdown, no title box, working upload =====
 V.mat=async function(){
-  const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code,title').order('code').then(ok):[]]);
-  const L=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);window.MATS=L;
-  v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}<div class="c"><h3>Course materials</h3>${L.map(m=>{const own=m.uploaded_by_id==me.id||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)
+  const typ=isSt()?'COURSE_REP':me.role;
+  const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),db.from('courses').select('id,code,title').order('code').then(ok)]);
+  // courses this person may upload to: admin = all, lecturer = the ones they teach, student = only the courses they are a rep for
+  let UC=[];
+  try{
+    if(isAd())UC=C;
+    else if(isLec()){
+      UC=ok(await db.from('course_lecturers').select('courses(id,code,title)').eq('lecturer_id',me.id)).map(x=>x.courses).filter(Boolean);
+      if(!UC.length)UC=C;
+    }else if(isSt()&&me.reg){
+      const r=ok(await db.from('course_reps').select('id').eq('reg_num',me.reg).limit(1))[0];
+      if(r)UC=ok(await db.from('course_rep_assignments').select('courses(id,code,title)').eq('rep_id',r.id)).map(x=>x.courses).filter(Boolean);
+    }
+  }catch(e){UC=[]}
+  const seen={};UC=UC.filter(c=>!seen[c.id]&&(seen[c.id]=1)).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
+  const L=M.filter(m=>m.is_public||isLec()||isAd()||(m.uploaded_by_id==me.id&&m.uploaded_by_type==typ));window.MATS=L;
+  const cnt={};L.forEach(m=>{cnt[m.course_id]=(cnt[m.course_id]||0)+1});
+  const sel=window.MCSEL&&C.some(c=>String(c.id)==String(window.MCSEL))?String(window.MCSEL):'';
+  const shown=sel?L.filter(m=>String(m.course_id)==sel):[];
+  const upSel=UC.some(c=>String(c.id)==sel)?sel:'';
+  const list=shown.map(m=>{const own=(m.uploaded_by_id==me.id&&m.uploaded_by_type==typ)||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('');
+  v(`<div class="c"><h3>Course materials</h3><label for="mcf">Choose a course</label><select id="mcf" onchange="mcPick(this.value)"><option value="">Select a course…</option>${C.map(c=>`<option value="${c.id}"${String(c.id)==sel?' selected':''}>${H(c.code)} - ${H(c.title)} (${cnt[c.id]||0})</option>`).join('')}</select>${sel?(list||'<p class="mu" style="margin-bottom:0">No materials for this course yet.</p>'):'<p class="mu" style="margin-bottom:0">Choose a course above to see its materials.</p>'}</div>${UC.length?`<div class="c"><h3>Upload PDF</h3>${isSt()?'<p class="mu" style="margin-top:0">You can upload for the courses you are a rep for.</p>':''}<label>Course</label><select id="mc">${UC.map(c=>`<option value="${c.id}"${String(c.id)==upSel?' selected':''}>${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}`)
 };
+window.mcPick=x=>{window.MCSEL=x;go('mat')};
 async function upl(){
   const m=$('#um'),f=$('#mf').files[0],cid=$('#mc').value;
   if(!cid){m.textContent='Choose a course first.';return}
@@ -836,11 +856,11 @@ async function upl(){
     const up=await db.storage.from('materials').upload(path,f,{contentType:'application/pdf'});
     if(up.error)throw up.error;
     const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
-    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:me.role};
+    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:isSt()?'COURSE_REP':me.role};
     const d=$('#md2').value.trim();if(d)row.description=d;
     ok(await db.from('course_materials').insert(row));
     if(row.is_public)await notify([{target_role:'STUDENT',title:'New material',message:`${row.title} (${label})`,link_url:'/materials'}]);
-    go('mat');
+    window.MCSEL=cid;go('mat');
   }catch(e){m.textContent=e.message}
 }
 async function vis(id,pub){
