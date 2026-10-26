@@ -33,19 +33,15 @@ const offlinePage = () =>
   );
 
 async function pageRequest(event) {
-  // Network first so new versions of the portal show immediately; fall back to the saved copy when offline or slow.
   const cache = await caches.open(VERSION);
+  const cached = await cache.match(ROOT);
   const net = fetch(event.request).then((res) => {
     if (res.ok) cache.put(ROOT, res.clone());
     return res;
   });
-  const slow = new Promise((resolve) => setTimeout(resolve, 4000, null));
-  try {
-    const first = await Promise.race([net, slow]);
-    if (first) return first;
-  } catch (_e) {}
-  const cached = await cache.match(ROOT);
-  if (cached) { event.waitUntil(net.catch(() => {})); return cached; }
+  event.waitUntil(net.catch(() => {}));
+  // Saved copy exists: open instantly (no waiting on the network) and refresh it for next time.
+  if (cached) return cached;
   return net.catch(() => offlinePage());
 }
 
