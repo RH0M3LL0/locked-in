@@ -2,11 +2,9 @@
 // - Page (navigation): network first, falls back to the saved copy when offline or slow.
 // - Own static files and CDN scripts/fonts: served from cache, refreshed in the background.
 // - Supabase API calls and anything else: never touched, always go to the network.
-const VERSION = "cre-portal-v11";
-const FILES = "cre-files-v1"; // opened lecture PDFs and images; kept across app updates
-const MAX_FILES = 60;
+const VERSION = "cre-portal-v10";
 const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/logo.svg"];
-const CDN = ["cdn.jsdelivr.net", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com"];
+const CDN = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const ROOT = new URL("./", self.location).href;
 
 // Saves the app files, plus the page's outside files (data library and fonts) so even the very first offline start works.
@@ -45,7 +43,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== FILES).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -83,22 +81,6 @@ async function staleWhileRevalidate(request) {
   return cached || (await fresh) || Response.error();
 }
 
-// Lecture PDFs and images from Supabase storage: once opened they stay on the device.
-// Saved without the signed-link token so a new link still finds the same file.
-async function storedFile(request) {
-  const u = new URL(request.url), key = new Request(u.origin + u.pathname);
-  const cache = await caches.open(FILES);
-  const hit = await cache.match(key);
-  if (hit) return hit;
-  const res = await fetch(request);
-  if (res.ok && res.status === 200) {
-    await cache.put(key, res.clone());
-    const keys = await cache.keys();
-    for (let i = 0; i < keys.length - MAX_FILES; i++) await cache.delete(keys[i]);
-  }
-  return res;
-}
-
 // Always try the network first for the manifest so a renamed app is never served from an old cache.
 async function networkFirst(request) {
   const cache = await caches.open(VERSION);
@@ -116,11 +98,6 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.protocol !== "https:" && url.hostname !== "localhost") return;
-  if (url.hostname.endsWith(".supabase.co")) {
-    // data and sign-in calls are never touched; only opened files are kept
-    if (url.pathname.startsWith("/storage/v1/object/") && !req.headers.has("range")) event.respondWith(storedFile(req));
-    return;
-  }
   if (req.mode === "navigate") { event.respondWith(pageRequest(event)); return; }
   if (url.origin === self.location.origin && url.pathname.endsWith("manifest.webmanifest")) {
     event.respondWith(networkFirst(req));
