@@ -448,8 +448,8 @@ return `<div class="util"><div class="uin"><span><b>University of Nigeria, Nsukk
 const TD={rep:'Assign class reps',rdesk:'Set tests for your lecturer',dir:'Staff directory',mat:'Course PDFs',exam:'Tests and exams',res:'Scores and CGPA',cal:'Dates and deadlines',tk:'Get support',adm:'Manage the portal',nf:'Latest notices'};
 const SKEL=()=>`<div aria-busy="true" aria-label="Loading"><div class="g">${[0,1,2].map(()=>'<div class="c"><div class="sk" style="width:38%;height:14px"></div><div class="sk" style="width:80%;height:22px;margin:14px 0"></div><div class="sk" style="height:8px"></div></div>').join('')}</div><div class="c"><div class="sk" style="width:26%;height:16px;margin-bottom:12px"></div>${[0,1,2,3].map(()=>'<div class="row"><div class="sk" style="width:40px;height:40px;border-radius:12px;flex:none"></div><div style="flex:1"><div class="sk" style="width:62%;height:14px"></div><div class="sk" style="width:36%;height:12px;margin-top:8px"></div></div></div>').join('')}</div></div>`;
 const pb=on=>$('#pb')?.classList.toggle('on',!!on);
-function net(k){const e=$('#net');if(!e)return;const T={slow:['Slow connection','Still loading. Large pages can take a little longer.'],off:['You are offline','Showing what has already loaded. Reconnect, then retry.'],err:['Could not load this page','Check your connection and try again.']}[k];if(!T){e.classList.remove('on');return}e.innerHTML=`${ico('wifi')}<div><b>${T[0]}</b><span class="mu">${T[1]}</span></div><button class="s" onclick="net('');R()">Retry</button>`;e.classList.add('on')}
-addEventListener('offline',()=>net('off'));addEventListener('online',()=>{net('');if(me)R()});
+function net(k){const e=$('#net');if(!e)return;const T={slow:['Slow connection','Still loading. Large pages can take a little longer.'],off:[navigator.onLine?'Showing saved data':'You are offline','Showing the last data saved on this device'+(window.OFFAT&&isFinite(window.OFFAT)?' ('+new Date(window.OFFAT).toLocaleString([],{dateStyle:'medium',timeStyle:'short'})+')':'')+'. Saving changes needs internet.'],err:['Could not load this page','Check your connection and try again.']}[k];if(!T){e.classList.remove('on');return}e.innerHTML=`${ico('wifi')}<div><b>${T[0]}</b><span class="mu">${T[1]}</span></div><button class="s" onclick="net('');R()">Retry</button>`;e.classList.add('on')}
+addEventListener('offline',()=>net('off'));addEventListener('online',()=>{net('');if(me&&(window.OFFSTALE||window.LASTERR))refreshView()});
 if(navigator.connection&&/(^|-)2g|3g/.test(navigator.connection.effectiveType||''))setTimeout(()=>net('slow'),600);
 setTimeout(()=>{const l=$('#ld');if(l&&!l.classList.contains('x')){$('#ldm').textContent='Taking longer than usual. Check your connection.';$('#ldr').hidden=false}},7000);
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>curTheme()=='system'&&setTheme('system'));
@@ -458,7 +458,47 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>curThe
 // ===== CONFIG: paste your Supabase project values =====
 const CFG={URL:'https://bbqwzuvzdpqflizdakwe.supabase.co',KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicXd6dXZ6ZHBxZmxpemRha3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMTA0MzgsImV4cCI6MjEwNzg4NjQzOH0.iu6qDel4ZE2xCs1uTrP0U4-9e_I9aH1fSUiSrwdlDK4',
   CODES:{LECTURER:'LECT-2026',ADMIN:'ADMIN-2026'}};
-const db=supabase.createClient(CFG.URL,CFG.KEY);
+// ===== Offline data: the last good answer to every read is kept on this device and used when there is no connection =====
+const OFF={
+  db:null,gen:0,
+  open(){return this.db||(this.db=new Promise((res,rej)=>{const r=indexedDB.open('cre-offline',1);r.onupgradeneeded=()=>r.result.createObjectStore('api',{keyPath:'k'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
+  async get(k){try{const d=await this.open();return await new Promise(res=>{const q=d.transaction('api').objectStore('api').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})}catch(e){return null}},
+  async put(rec){try{const d=await this.open();d.transaction('api','readwrite').objectStore('api').put(rec);if(Math.random()<.04)this.prune()}catch(e){}},
+  async prune(){try{const d=await this.open();const all=await new Promise(res=>{const q=d.transaction('api').objectStore('api').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])});if(all.length<=400)return;all.sort((a,b)=>b.t-a.t);const tx=d.transaction('api','readwrite');all.slice(400).forEach(r=>tx.objectStore('api').delete(r.k))}catch(e){}},
+  async clear(){this.gen++;try{const d=await this.open();d.transaction('api','readwrite').objectStore('api').clear()}catch(e){}}
+};
+// reads that are safe to keep and show again later (writes such as start_assessment are never kept)
+const OFF_RPC=/^(student_assessments|student_rep_info|rep_list|rep_list_banks|rep_list_assessments|cgpa_ranking|staff_list_assessments|staff_assessment_submissions|course_announcements)$/;
+const offHdr=(h,n)=>{try{if(!h)return'';if(typeof h.get==='function')return h.get(n)||'';const k=Object.keys(h).find(x=>x.toLowerCase()===n);return k?String(h[k]):''}catch(e){return''}};
+async function offlineFetch(input,init){
+  const url=typeof input==='string'?input:input.url;
+  const method=String((init&&init.method)||(typeof input!=='string'&&input.method)||'GET').toUpperCase();
+  const isRest=url.includes('/rest/v1/'),rpc=(url.match(/\/rest\/v1\/rpc\/([a-z0-9_]+)/i)||[])[1];
+  const readable=isRest&&(method==='GET'||(method==='POST'&&rpc&&OFF_RPC.test(rpc)));
+  if(!readable){
+    if(navigator.onLine===false&&(isRest||url.includes('/functions/v1/')||url.includes('/storage/v1/')))throw new TypeError('You are offline. This needs internet, so try again when you are back online.');
+    return fetch(input,init);
+  }
+  const body=method==='POST'&&init&&typeof init.body==='string'?init.body:'';
+  const k=((typeof me!=='undefined'&&me)?me.id:'anon')+'|'+method+'|'+url+'|'+body+'|'+offHdr(init&&init.headers,'accept')+'|'+offHdr(init&&init.headers,'prefer');
+  const replay=h=>{const hd={'content-type':h.ct||'application/json','x-from-cache':'1'};if(h.cr)hd['content-range']=h.cr;window.OFFSTALE=true;window.OFFAT=Math.min(window.OFFAT||Infinity,h.t);return new Response(h.body,{status:200,headers:hd})};
+  const gen=OFF.gen;
+  const save=res=>{if(!res.ok)return;res.clone().text().then(t=>{if(t.length<1.5e6&&OFF.gen===gen&&!/password/i.test(t))OFF.put({k,body:t,ct:res.headers.get('content-type'),cr:res.headers.get('content-range'),t:Date.now()})}).catch(()=>{})};
+  const hit=await OFF.get(k);
+  if(navigator.onLine===false){
+    if(hit)return replay(hit);
+    throw new TypeError('You are offline, and this has not been saved on this device yet.');
+  }
+  const netP=fetch(input,init).then(r=>{save(r);return r});
+  if(!hit)return netP;
+  // saved copy exists: if the network fails, or is stuck for 8 seconds, show the saved one
+  const first=await Promise.race([netP.then(r=>({r}),()=>({fail:1})),new Promise(r=>setTimeout(()=>r({slow:1}),8000))]);
+  if(first.r)return first.r;
+  return replay(hit);
+}
+// when the connection returns, only refresh a page that was showing old data or an error
+async function refreshView(){try{window.OFFSTALE=false;window.OFFAT=Infinity;await V[tab]();window.LASTERR=false;net(window.OFFSTALE?'off':'')}catch(e){}}
+const db=supabase.createClient(CFG.URL,CFG.KEY,{global:{fetch:offlineFetch}});
 const $=s=>document.querySelector(s),H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fd=d=>d?new Date(d).toLocaleString([],{dateStyle:'medium',timeStyle:'short'}):'';
 const TB={STUDENT:'students',LECTURER:'lecturers',ADMIN:'admins'},REG=/^\d{4}\/\d{6}$/,RN={STUDENT:'Student',LECTURER:'Lecturer',ADMIN:'Admin'};
 const NAV={STUDENT:['home','dir','mat','exam','res','cal','tk','nf'],LECTURER:['home','dir','mat','exam','res','cal','nf'],ADMIN:['home','dir','mat','cal','tk','adm','nf']};
@@ -522,7 +562,7 @@ if(!REG.test(id))return null;return ok(await db.from(t).select('*').eq('reg_num'
 async function login(){const role=$('#lr').value,id=$('#li').value.trim();
 try{const u=await find(role,id);if(!u||u.password_hash!==$('#lp').value)return msg('Incorrect details or password.');
 me={role,id:u.id,name:u.full_name,email:u.email,phone:u.phone_number,reg:u.reg_num||'',level:u.level||null};localStorage.setItem('sess',JSON.stringify(me));window.REPOF=undefined;tab='home';await R();if(isSt())remind()}catch(e){msg(e.message)}}
-function out(){me=null;window.REPOF=undefined;localStorage.removeItem('sess');R()}
+function out(){me=null;window.REPOF=undefined;localStorage.removeItem('sess');try{OFF.clear()}catch(e){}R()}
 // Forgot password (emailed 6-digit code, handled by the reset-password edge function)
 let FPS={};
 function fp(){FPS={};modal(`<h3>Reset password</h3><p class="mu" style="margin-top:0">We will email a 6-digit code to the email on your account.</p><label>I am a</label><select id="fr" onchange="fpRole()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="fl">Registration number</label><input id="fi" autocapitalize="none" autocomplete="username"><div id="fcw"><label>Email on your account</label><input id="fe" type="email" autocapitalize="none" autocomplete="email"></div><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpGo()">Send code</button><button onclick="closeM()">Cancel</button></div>`)}
@@ -556,7 +596,7 @@ async function R(){clearInterval(tm);if(me&&!NAV[me.role]){me=null;localStorage.
 if(me.role=='STUDENT'&&(window.REPOF===undefined||tab=='home')){try{window.REPOF=ok(await db.rpc('student_rep_info',{p_student:me.id}))}catch(e){window.REPOF=window.REPOF||[]}}
 let nv=NAV[me.role];if(me.role=='STUDENT'&&(window.REPOF||[]).length)nv=nv.flatMap(k=>k=='exam'?['exam','rdesk']:[k]);window.NV=nv;if(!nv.includes(tab)&&tab!='prof')tab='home';
 a.innerHTML=shell(nv);
-v(SKEL());pb(1);bell();const _sl=setTimeout(()=>net('slow'),4500);try{await V[tab]();net(navigator.onLine?'':'off')}catch(e){err(e);net(navigator.onLine?'err':'off')} finally{clearTimeout(_sl);pb(0);setTimeout(()=>document.getElementById('ld')?.classList.add('x'),300)}}
+v(SKEL());pb(1);bell();const _sl=setTimeout(()=>net('slow'),4500);try{window.OFFSTALE=false;window.OFFAT=Infinity;await V[tab]();window.LASTERR=false;net(navigator.onLine&&!window.OFFSTALE?'':'off')}catch(e){window.LASTERR=true;err(e);net(navigator.onLine?'err':'off')} finally{clearTimeout(_sl);pb(0);setTimeout(()=>document.getElementById('ld')?.classList.add('x'),300)}}
 const myNotes=async()=>ok(await db.from('notifications').select('*').or(`target_role.eq.${me.role},target_user_id.eq.${me.id}`).order('created_at',{ascending:false}).limit(50));
 async function bell(){try{const n=(await myNotes()).filter(x=>new Date(x.created_at)>+(localStorage.getItem('seen'+me.id)||0)).length;const b=$('#nfb');if(b&&n)b.textContent='('+n+')'}catch(e){}}
 async function remind(){return checkAlerts()}
@@ -819,30 +859,10 @@ async function lkRes(){
 
 // ===== Materials: "CODE - Title" dropdown, no title box, working upload =====
 V.mat=async function(){
-  const typ=isSt()?'COURSE_REP':me.role;
-  const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),db.from('courses').select('id,code,title').order('code').then(ok)]);
-  // courses this person may upload to: admin = all, lecturer = the ones they teach, student = only the courses they are a rep for
-  let UC=[];
-  try{
-    if(isAd())UC=C;
-    else if(isLec()){
-      UC=ok(await db.from('course_lecturers').select('courses(id,code,title)').eq('lecturer_id',me.id)).map(x=>x.courses).filter(Boolean);
-      if(!UC.length)UC=C;
-    }else if(isSt()&&me.reg){
-      const r=ok(await db.from('course_reps').select('id').eq('reg_num',me.reg).limit(1))[0];
-      if(r)UC=ok(await db.from('course_rep_assignments').select('courses(id,code,title)').eq('rep_id',r.id)).map(x=>x.courses).filter(Boolean);
-    }
-  }catch(e){UC=[]}
-  const seen={};UC=UC.filter(c=>!seen[c.id]&&(seen[c.id]=1)).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
-  const L=M.filter(m=>m.is_public||isLec()||isAd()||(m.uploaded_by_id==me.id&&m.uploaded_by_type==typ));window.MATS=L;
-  const cnt={};L.forEach(m=>{cnt[m.course_id]=(cnt[m.course_id]||0)+1});
-  const sel=window.MCSEL&&C.some(c=>String(c.id)==String(window.MCSEL))?String(window.MCSEL):'';
-  const shown=sel?L.filter(m=>String(m.course_id)==sel):[];
-  const upSel=UC.some(c=>String(c.id)==sel)?sel:'';
-  const list=shown.map(m=>{const own=(m.uploaded_by_id==me.id&&m.uploaded_by_type==typ)||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('');
-  v(`<div class="c"><h3>Course materials</h3><label for="mcf">Choose a course</label><select id="mcf" onchange="mcPick(this.value)"><option value="">Select a course…</option>${C.map(c=>`<option value="${c.id}"${String(c.id)==sel?' selected':''}>${H(c.code)} - ${H(c.title)} (${cnt[c.id]||0})</option>`).join('')}</select>${sel?(list||'<p class="mu" style="margin-bottom:0">No materials for this course yet.</p>'):'<p class="mu" style="margin-bottom:0">Choose a course above to see its materials.</p>'}</div>${UC.length?`<div class="c"><h3>Upload PDF</h3>${isSt()?'<p class="mu" style="margin-top:0">You can upload for the courses you are a rep for.</p>':''}<label>Course</label><select id="mc">${UC.map(c=>`<option value="${c.id}"${String(c.id)==upSel?' selected':''}>${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}`)
+  const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code,title').order('code').then(ok):[]]);
+  const L=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);window.MATS=L;
+  v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}<div class="c"><h3>Course materials</h3>${L.map(m=>{const own=m.uploaded_by_id==me.id||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)
 };
-window.mcPick=x=>{window.MCSEL=x;go('mat')};
 async function upl(){
   const m=$('#um'),f=$('#mf').files[0],cid=$('#mc').value;
   if(!cid){m.textContent='Choose a course first.';return}
@@ -856,11 +876,11 @@ async function upl(){
     const up=await db.storage.from('materials').upload(path,f,{contentType:'application/pdf'});
     if(up.error)throw up.error;
     const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
-    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:isSt()?'COURSE_REP':me.role};
+    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:me.role};
     const d=$('#md2').value.trim();if(d)row.description=d;
     ok(await db.from('course_materials').insert(row));
     if(row.is_public)await notify([{target_role:'STUDENT',title:'New material',message:`${row.title} (${label})`,link_url:'/materials'}]);
-    window.MCSEL=cid;go('mat');
+    go('mat');
   }catch(e){m.textContent=e.message}
 }
 async function vis(id,pub){
@@ -899,19 +919,11 @@ const qText=qs=>qs.map((q,i)=>`${i+1}. ${q.q}\n`+(q.type=='short'?`   Model answ
 const RAD='style="width:18px;height:18px;margin:0 10px 0 0;flex:none"';
 
 V.exam=async function(){
-  const M=ok(await db.from('course_materials').select('id,title,is_public,course_id,file_url,created_at,courses(code,title)').order('created_at',{ascending:false}));
+  const M=ok(await db.from('course_materials').select('id,title,is_public,courses(code,title)').order('created_at',{ascending:false}));
   const opt=M.filter(m=>!isSt()||m.is_public).map(m=>`<option value="${m.id}">${H((m.courses||{}).code||'')} - ${H((m.courses||{}).title||'')} · ${H(m.title)}</option>`).join('');
   if(isSt()){
-    const PM=M.filter(m=>m.is_public),CM={};
-    PM.forEach(m=>{const c=m.courses||{};(CM[m.course_id]=CM[m.course_id]||{id:m.course_id,code:c.code||'',title:c.title||'',n:0}).n++});
-    const DC=Object.values(CM).sort(cmpCode);
-    const dsel=window.DCSEL&&DC.some(c=>String(c.id)==String(window.DCSEL))?String(window.DCSEL):'';
-    const dc=DC.find(c=>String(c.id)==dsel)||{};
-    const dm=PM.filter(m=>String(m.course_id)==dsel).sort((a,b)=>String(a.title).localeCompare(String(b.title),undefined,{numeric:true,sensitivity:'base'}));
-    const dopt=dm.map(m=>`<option value="${m.id}">${H(dc.code)} · ${H(m.title)}</option>`).join('');
     const A=ok(await db.from('drill_attempts').select('*').eq('reg_num',me.reg).order('created_at',{ascending:false}).limit(8));
-    const pick=!opt?'<span class="mu">No materials have been uploaded yet.</span>':!dsel?`<p class="mu" style="margin-top:0">${DC.length} course${DC.length==1?'':'s'} with files · A to Z. Tap a course, then choose the material to drill.</p>${courseGrid(DC,'dcPick','dcq')}`:`<div class="btn-back" onclick="dcPick('')">← All courses</div><div class="chead"><b>${H(dc.code)}</b><span>${H(dc.title)}</span><span class="tag">${dm.length} file${dm.length==1?'':'s'}</span></div><select id="dm" style="display:none">${dopt}</select>${dm.map((m,i)=>`<div class="row pick${i?'':' on'}" data-id="${m.id}" onclick="dmPick('${m.id}')"><div><b>${H(m.title)}</b><div class="mu">${fx(m.file_url)} · ${fd(m.created_at)}</div></div><span class="dot"></span></div>`).join('')}<div class="g" style="margin-top:12px"><div><label>Questions</label><select id="dn"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div><div><label>Difficulty</label><select id="dd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="startDrill()">Start drill</button>`;
-    v(`<div id="stt"></div><div class="c"><h3>✨ AI drill test</h3><p class="mu">Pick a course, then a material. The AI writes practice questions from that PDF, scores you at the end and explains every answer. Drill scores are for practice only and do not count towards your results.</p>${pick}</div><div id="dz"></div><div class="c"><h3>My recent drills</h3>${A.map(a=>`<div class="row"><div><b>${H(a.material_title||'')}</b><div class="mu">${fd(a.created_at)}</div></div><span class="tag ${a.score/a.total>=.5?'ok':'er'}">${a.score}/${a.total}</span></div>`).join('')||'<span class="mu">No drills yet.</span>'}</div>`);
+    v(`<div id="stt"></div><div class="c"><h3>✨ AI drill test</h3><p class="mu">Pick a course material. The AI writes practice questions from that PDF, scores you at the end and explains every answer. Drill scores are for practice only and do not count towards your results.</p>${opt?`<label>Material</label><select id="dm">${opt}</select><div class="g"><div><label>Questions</label><select id="dn"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></div><div><label>Difficulty</label><select id="dd"><option>easy</option><option selected>medium</option><option>hard</option></select></div></div><button class="p" onclick="startDrill()">Start drill</button>`:'<span class="mu">No materials have been uploaded yet.</span>'}</div><div id="dz"></div><div class="c"><h3>My recent drills</h3>${A.map(a=>`<div class="row"><div><b>${H(a.material_title||'')}</b><div class="mu">${fd(a.created_at)}</div></div><span class="tag ${a.score/a.total>=.5?'ok':'er'}">${a.score}/${a.total}</span></div>`).join('')||'<span class="mu">No drills yet.</span>'}</div>`);
     loadMyTests();
     return;
   }
@@ -1713,9 +1725,7 @@ V.mat=async function(){
 };
 
 // Student: open the drill screen with this material chosen and start straight away
-window.dcPick=x=>{window.DCSEL=x;R()};
 window.matDrill=async function(id){
-  try{const r=ok(await db.from('course_materials').select('course_id').eq('id',id).limit(1))[0];if(r)window.DCSEL=r.course_id}catch(e){}
   tab='exam';await R();
   const s=$('#dm');
   if(!s){return}
@@ -1872,8 +1882,6 @@ body.out #app .abt{grid-column:1/-1!important;grid-row:2!important;justify-self:
 <script id="pwa-js">
 (function(){
   if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
-  var bar=document.createElement('div');bar.id='pwaOff';bar.setAttribute('role','status');bar.textContent='You are offline. Sign-in and live data need internet.';document.body.appendChild(bar);
-  var syncBar=function(){bar.classList.toggle('on',!navigator.onLine)};addEventListener('online',syncBar);addEventListener('offline',syncBar);syncBar();
   var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
   var dismissed=false;try{dismissed=localStorage.getItem('pwaDismiss')==='1'}catch(e){}
   if(standalone||dismissed)return;
@@ -2143,155 +2151,161 @@ window.tkSendDirect=async function(a){
 };
 })();
 </script>
-<script>
-// ===== Course cards (A to Z with file counts), notes backup, announcements and events for reps and lecturers =====
-(function(){
-const st=document.createElement('style');
-st.textContent=`
-.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-top:4px}
-.cc{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:12px 13px;min-height:100px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--tx);cursor:pointer;transition:transform .15s,border-color .15s;outline:none}
-.cc:hover,.cc:focus-visible{border-color:var(--ac);transform:translateY(-1px)}
-.cc.z{opacity:.6}
-.cc-code{font-weight:800;font-size:15px;line-height:1.2}
-.cc-t{font-size:12.5px;color:var(--tx2);line-height:1.3;flex:1}
-.cc-n{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--tx2)}
-.cc:not(.z) .cc-n{color:var(--ac);border-color:var(--ac)}
-.chead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 6px;font-size:15px}
-.chead b{font-size:17px}
-.btn-back{display:inline-block;cursor:pointer;padding:7px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--tx)}
-.row.pick{cursor:pointer}
-.row.pick.on{background:var(--surface-2);box-shadow:inset 0 0 0 1.5px var(--ac);border-radius:10px}
-.dot{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2)}
-.row.pick.on .dot{border-color:var(--ac);background:radial-gradient(var(--ac) 0 42%,transparent 46%)}
-details.c>summary{cursor:pointer;font-weight:700;list-style:none}
-details.c>summary::-webkit-details-marker{display:none}
-details.c[open]>summary{margin-bottom:10px}
-.ann{padding:10px 0;border-bottom:1px solid var(--border)}
-.ann:last-child{border:0}
-`;
-document.head.appendChild(st);
+<style id="motion">
+/* ===== Motion + responsive layout layer. Colours and themes come from the existing variables and are untouched. ===== */
+:root{--ease:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.65,0,.35,1);--side:248px;--maxw:1240px}
+@keyframes mFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes mFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes mFadeOut{to{opacity:0}}
+@keyframes mPop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes mShrinkOut{to{opacity:0;transform:scale(.94) translateY(8px)}}
+@keyframes mSlideDown{from{opacity:0;transform:translateY(-60%)}to{opacity:1;transform:none}}
+@keyframes mSlideRight{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes mMenu{from{opacity:0;transform:scale(.92) translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes mFloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(-2deg)}}
+@keyframes mDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,14px) scale(1.07)}}
 
-const cmp=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});
-const pl=n=>n==1?'':'s';
-const fw=n=>n+' file'+pl(n);
-window.cmpCode=(a,b)=>cmp(a.code,b.code);
-window.fx=u=>{const e=String(u||'').split('?')[0].split('.').pop();return(e&&e.length<=5?e:'file').toUpperCase()};
+/* theme switch fades instead of snapping */
+html.tt *,html.tt *::before,html.tt *::after{transition:background-color .35s ease,border-color .35s ease,color .35s ease,fill .35s ease,stroke .35s ease!important}
 
-window.courseGrid=(C,pick,qid)=>`<input id="${qid}" type="search" placeholder="Search courses…" oninput="cgFind(this.value)" style="margin-bottom:12px"><div class="cgrid">${C.map(c=>`<div class="cc${c.n?'':' z'}" role="button" tabindex="0" data-k="${H((c.code+' '+c.title).toLowerCase())}" onclick="${pick}('${c.id}')" onkeydown="if(event.key=='Enter')this.click()"><span class="cc-code">${H(c.code)}</span><span class="cc-t">${H(c.title)}</span><span class="cc-n">${c.n?fw(c.n):'No files yet'}</span></div>`).join('')}</div><p class="mu cg-none" style="display:none">No course matches that search.</p>`;
-window.cgFind=q=>{q=q.trim().toLowerCase();let n=0;document.querySelectorAll('#v .cc').forEach(b=>{const hit=!q||b.dataset.k.includes(q);b.style.display=hit?'':'none';if(hit)n++});const m=document.querySelector('#v .cg-none');if(m)m.style.display=n?'none':''};
-window.dmPick=id=>{const s=$('#dm');if(s)s.value=id;document.querySelectorAll('#v .pick').forEach(r=>r.classList.toggle('on',r.dataset.id==id))};
+/* ---- page content: fade and rise in, staggered ---- */
+.ptitle{animation:mFadeUp .45s var(--ease) backwards}
+#v>*{animation:mFadeUp .5s var(--ease) backwards}
+#v>*:nth-child(2){animation-delay:.05s}#v>*:nth-child(3){animation-delay:.1s}#v>*:nth-child(4){animation-delay:.15s}
+#v>*:nth-child(5){animation-delay:.2s}#v>*:nth-child(6){animation-delay:.25s}#v>*:nth-child(n+7){animation-delay:.3s}
+.g>*{animation:mFadeUp .5s var(--ease) backwards}
+.g>*:nth-child(2){animation-delay:.05s}.g>*:nth-child(3){animation-delay:.1s}.g>*:nth-child(4){animation-delay:.15s}
+.g>*:nth-child(5){animation-delay:.2s}.g>*:nth-child(6){animation-delay:.25s}.g>*:nth-child(7){animation-delay:.3s}.g>*:nth-child(n+8){animation-delay:.35s}
+.c>.row{animation:mFadeUp .45s var(--ease) backwards}
+.c>.row:nth-child(3){animation-delay:.04s}.c>.row:nth-child(4){animation-delay:.08s}.c>.row:nth-child(5){animation-delay:.12s}
+.c>.row:nth-child(6){animation-delay:.16s}.c>.row:nth-child(7){animation-delay:.2s}.c>.row:nth-child(n+8){animation-delay:.24s}
+.tkb{animation:mPop .3s var(--ease) backwards}
+.hero::after{animation:mDrift 9s ease-in-out infinite}
+.hero::before{animation:mDrift 12s ease-in-out infinite reverse}
+.hero h2,.hero p,.hbtn,.hchip{animation:mFadeUp .6s var(--ease) backwards}
+.hero .hchip{animation-delay:.1s}.hero h2{animation-delay:.18s}.hero p{animation-delay:.26s}.hbtn{animation-delay:.34s}
+.badge{animation:mPop .6s .25s var(--ease) backwards}.hal{animation:mFadeUp .6s .4s var(--ease) backwards}
 
-// courses this person may post to: admin = all, lecturer = the ones they teach, rep = the ones they are assigned
-async function myCourses(){
-  try{
-    if(isAd())return ok(await db.from('courses').select('id,code,title').order('code'));
-    if(isLec()){
-      const x=ok(await db.from('course_lecturers').select('courses(id,code,title)').eq('lecturer_id',me.id)).map(a=>a.courses).filter(Boolean);
-      return x.length?x:ok(await db.from('courses').select('id,code,title').order('code'));
-    }
-    if(isSt()&&me.reg){
-      const r=ok(await db.from('course_reps').select('id').eq('reg_num',me.reg).limit(1))[0];
-      if(r)return ok(await db.from('course_rep_assignments').select('courses(id,code,title)').eq('rep_id',r.id)).map(a=>a.courses).filter(Boolean);
-    }
-  }catch(e){}
-  return[];
+/* ---- press, hover, shrink ---- */
+button{transition:transform .18s var(--ease),background-color .2s,border-color .2s,box-shadow .2s,color .2s}
+button:active{transform:scale(.96)}
+button.p:hover,button.g2:hover{transform:translateY(-1px)}
+.tile{transition:transform .25s var(--ease),border-color .2s,background-color .2s,box-shadow .25s}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--sh)}
+.tile:active{transform:scale(.97)}
+.tile>div:first-child{transition:transform .3s var(--ease),background-color .2s}
+.tile:hover>div:first-child{transform:scale(1.1) rotate(-4deg)}
+.g>.c:not(.tile){transition:transform .25s var(--ease),border-color .2s,box-shadow .25s}
+.g>.c:not(.tile):hover{transform:translateY(-2px)}
+.row{transition:background-color .2s}
+.fab{transition:transform .2s var(--ease),background-color .2s}
+.fab:hover{transform:translateY(-2px) scale(1.04)}.fab:active{transform:scale(.95)}
+.tag{transition:transform .2s var(--ease)}.tag:hover{transform:scale(1.05)}
+#pwaInst{animation:mPop .5s 1.2s var(--ease) backwards}
+
+/* ---- popups: ease in, shrink out ---- */
+#md.on{animation:mFadeIn .22s ease both}
+#md .c{animation:mPop .32s var(--ease) both}
+#md.out{animation:mFadeOut .2s ease forwards}
+#md.out .c{animation:mShrinkOut .2s ease forwards}
+.toast{transform:translateY(-18px) scale(.96)}.toast.in{transform:none}
+#ld{transition:opacity .5s var(--ease-io),transform .5s var(--ease-io)}
+.mpan:not([hidden]){transform-origin:top left;animation:mMenu .22s var(--ease) both}
+.mpan:not([hidden]) button{animation:mSlideRight .3s var(--ease) backwards}
+.mpan:not([hidden]) button:nth-child(3){animation-delay:.03s}.mpan:not([hidden]) button:nth-child(4){animation-delay:.06s}
+.mpan:not([hidden]) button:nth-child(5){animation-delay:.09s}.mpan:not([hidden]) button:nth-child(6){animation-delay:.12s}
+.mpan:not([hidden]) button:nth-child(n+7){animation-delay:.15s}
+
+/* ---- landing page ---- */
+.ln-top{animation:mSlideDown .6s var(--ease) backwards;padding-inline:max(16px,calc((100% - var(--maxw))/2))}
+.ln-hero{animation:mPop .8s .1s var(--ease) backwards}
+.ln-hero::before{animation:mDrift 10s ease-in-out infinite}.ln-hero::after{animation:mDrift 13s ease-in-out infinite reverse}
+.ln-copy>*{animation:mFadeUp .7s var(--ease) backwards}
+.ln-copy>:nth-child(1){animation-delay:.25s}.ln-copy>:nth-child(2){animation-delay:.35s}.ln-copy>:nth-child(3){animation-delay:.45s}.ln-copy>:nth-child(4){animation-delay:.55s}
+.ln-art img{animation:mFadeIn 1s .4s backwards,mFloat 7s 1.4s ease-in-out infinite}
+.ln-btn{transition:transform .2s var(--ease),background-color .2s,filter .2s,border-color .2s}
+.ln-btn:hover{transform:translateY(-2px)}.ln-btn:active{transform:scale(.96)}
+.rv{opacity:0}
+.rv.in{opacity:1;animation:mFadeUp .7s var(--ease) backwards;animation-delay:var(--d,0s)}
+.ln-card{transition:transform .25s var(--ease),border-color .2s,box-shadow .25s}
+.ln-card:hover{transform:translateY(-4px);border-color:var(--ac2);box-shadow:var(--sh)}
+.ln-card i{transition:transform .3s var(--ease)}.ln-card:hover i{transform:scale(1.12) rotate(-5deg)}
+.ln-hero,.ln-sec,.ln-foot{max-width:var(--maxw)}
+body.out:not(.land) #app::before{animation:mSlideRight .8s var(--ease) backwards}
+body.out:not(.land) .lw{animation:mPop .6s .1s var(--ease) backwards}
+
+/* ---- tablets ---- */
+@media(min-width:640px) and (max-width:1023px){
+ .wrap{padding:26px 24px 120px}
+ .g:has(>.tile){grid-template-columns:repeat(3,1fr)}
+ .ln-grid{grid-template-columns:repeat(3,1fr)}
 }
-const uniq=C=>{const s={};return C.filter(c=>!s[c.id]&&(s[c.id]=1)).sort(window.cmpCode)};
-const who=()=>isAd()?'Admin':isLec()?'Lecturer':'Course rep';
-const opts=C=>C.map(c=>`<option value="${c.id}" data-code="${H(c.code)}">${H(c.code)} - ${H(c.title)}</option>`).join('');
 
-// ----- Materials page -----
-V.mat=async function(){
-  const typ=isSt()?'COURSE_REP':me.role;
-  const[M,C0]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),db.from('courses').select('id,code,title').order('code').then(ok)]);
-  const UC=uniq(await myCourses());
-  const mine=m=>m.uploaded_by_id==me.id&&m.uploaded_by_type==typ;
-  const L=M.filter(m=>m.is_public||mine(m)||isAd());window.MATS=L;
-  const cnt={};L.forEach(m=>{cnt[m.course_id]=(cnt[m.course_id]||0)+1});
-  const C=C0.map(c=>({...c,n:cnt[c.id]||0})).sort(window.cmpCode);
-  const sel=window.MCSEL&&C.some(c=>String(c.id)==String(window.MCSEL))?String(window.MCSEL):'';
-  const cur=C.find(c=>String(c.id)==sel);
-  const rowOf=(m,showCourse)=>{
-    const own=mine(m)||isAd(),c=m.courses||{},t=fx(m.file_url),pdf=t=='PDF';
-    return`<div class="row"><div><b>${H(m.title)}</b> <span class="tag">${t}</span> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${showCourse?H(c.code||'')+' · ':''}${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r">${pdf?`<button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button>`:''}${pdf&&(m.is_public||!isSt())?`<button class="s p" onclick="${isSt()?'matDrill':'matGen'}('${m.id}')">${isSt()?'✨ Drill':'✨ Questions'}</button>`:''}<a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Share with class'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`;
-  };
-  let main;
-  if(!cur){
-    main=`<div class="c"><h3>Course materials</h3><p class="mu" style="margin-top:0">${C.length} course${pl(C.length)} · ${fw(L.length)} · A to Z. Tap a course to open its files.</p>${C.length?courseGrid(C,'mcPick','mcq'):'<span class="mu">No courses yet.</span>'}</div>`;
-  }else{
-    const shown=L.filter(m=>String(m.course_id)==sel).sort((a,b)=>cmp(a.title,b.title));
-    main=`<div class="c"><div class="btn-back" onclick="mcPick('')">← All courses</div><div class="chead"><b>${H(cur.code)}</b><span>${H(cur.title)}</span><span class="tag">${fw(shown.length)}</span></div>${shown.map(m=>rowOf(m,false)).join('')||'<p class="mu" style="margin-bottom:0">No materials for this course yet.</p>'}</div>`;
-  }
-  const upSel=UC.some(c=>String(c.id)==sel)?sel:'';
-  const upOpts=UC.map(c=>`<option value="${c.id}"${String(c.id)==upSel?' selected':''}>${H(c.code)} - ${H(c.title)}</option>`).join('');
-  const up=UC.length?`<details class="c"><summary>⬆️ Upload a PDF for the class</summary>${isSt()?'<p class="mu" style="margin-top:0">You can upload for the courses you are a rep for.</p>':''}<label>Course</label><select id="mc">${upOpts}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></details>`:'';
-  const B=L.filter(m=>mine(m)&&!m.is_public).sort((a,b)=>cmp(a.title,b.title));
-  const bk=UC.length?`<details class="c"${B.length?' open':''}><summary>🗂️ My notes backup · ${fw(B.length)}</summary><p class="mu" style="margin-top:0">Keep a private copy of your notes here, in any common format. They stay hidden from students until you tap “Share with class”.</p><label>Course</label><select id="bkc">${upOpts}</select><label>Files (PDF, Word, PowerPoint, Excel, images, text)</label><input id="bkf" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.png,.jpg,.jpeg"><button class="p" onclick="bkUp()">Back up</button><div id="bkm" class="mu"></div>${B.length?`<div style="margin-top:12px">${B.map(m=>rowOf(m,true)).join('')}</div>`:''}</details>`:'';
-  v(main+bk+up);
-};
-window.mcPick=x=>{window.MCSEL=x;go('mat')};
+/* ---- laptops and desktops: permanent sidebar, wider canvas ---- */
+@media(min-width:1024px){
+ .mbtn{display:none}
+ .menuwrap{position:static}
+ .mpan,.mpan[hidden],.mpan.exp{display:flex!important;position:fixed;left:0;top:0;bottom:0;width:var(--side);padding:78px 12px 16px;border-radius:0;border:0;border-right:1px solid var(--border);box-shadow:none;overflow-y:auto;overflow-x:hidden;z-index:45;animation:none;background:var(--surface)}
+ .mpan::before{content:"Computer & Robotics Education";position:absolute;left:18px;right:12px;top:22px;font:800 15px/1.25 var(--fd);color:var(--nv);letter-spacing:-.01em;padding-left:14px;border-left:4px solid var(--gold)}
+ .mpan .mlb{opacity:1;width:auto}
+ .mexp,.mexp+.msep{display:none}
+ .mpan:not([hidden]) button{animation:none}
+ .mpan button{transition:background-color .2s,transform .2s var(--ease),color .2s}
+ .mpan button:hover{transform:translateX(3px)}
+ body.in .util,body.in .mast{padding-left:var(--side)}
+ body.in #app>.wrap{max-width:none;margin:0 0 0 var(--side);padding:34px clamp(28px,4vw,64px) 90px}
+ body.in #app>.wrap>*{max-width:var(--maxw);margin-left:auto;margin-right:auto}
+ .g:has(>.tile){grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+ .g{gap:18px}
+ .c{padding:22px}
+ .hero{padding:48px 52px;grid-template-columns:1.4fr 1fr;gap:40px;min-height:300px}
+ .hero h2{font-size:clamp(34px,3.4vw,46px)}
+ .c>label,.c>input,.c>select,.c>textarea{max-width:560px}
+ .ln-hero{padding:72px 64px;min-height:520px;margin-top:24px}
+ .ln-art img{width:280px}
+ .ln-grid{grid-template-columns:repeat(5,1fr)}
+ .ln-steps{grid-template-columns:repeat(3,1fr)}
+ .ln-sec{margin-top:64px}
+}
+@media(min-width:1600px){:root{--side:272px;--maxw:1400px}}
 
-window.bkUp=async function(){
-  const m=$('#bkm'),fs=[...$('#bkf').files],cid=$('#bkc').value;
-  if(!cid){m.textContent='Choose a course first.';return}
-  if(!fs.length){m.textContent='Choose one or more files.';return}
-  const big=fs.find(f=>f.size>20e6);if(big){m.textContent=big.name+' is over 20 MB.';return}
-  const typ=isSt()?'COURSE_REP':me.role,label=$('#bkc').selectedOptions[0].textContent,ccode=label.split(' - ')[0].replace(/\W+/g,'');
-  let done=0;
-  try{
-    for(const f of fs){
-      m.textContent=`Backing up ${done+1} of ${fs.length}…`;
-      const path=`${ccode}/backup_${Date.now()}_${f.name.replace(/[^\w.\-]+/g,'_')}`;
-      const u=await db.storage.from('materials').upload(path,f,{contentType:f.type||'application/octet-stream'});
-      if(u.error)throw u.error;
-      const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
-      ok(await db.from('course_materials').insert({course_id:cid,title:f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:false,uploaded_by_id:me.id,uploaded_by_type:typ,description:'Notes backup'}));
-      done++;
-    }
-    go('mat');
-  }catch(e){m.textContent=(done?done+' saved. ':'')+e.message}
+/* ---- small phones ---- */
+@media(max-width:480px){
+ .hero{padding:22px 18px}
+ .hbtn button{flex:1 1 140px}
+ .c{padding:16px}
+}
+</style>
+<script>
+// ===== Motion helpers: fade-out for popups, smooth theme switch, scroll reveal on the landing page =====
+(function(){
+const md=()=>document.getElementById('md');
+const _close=window.closeM,_modal=window.modal,_theme=window.setTheme;
+window.modal=function(h){const m=md();if(m)m.classList.remove('out');return _modal(h)};
+window.closeM=function(){
+  const m=md();
+  if(window.PWF||!m||!m.classList.contains('on')||m.classList.contains('out'))return _close();
+  m.classList.add('out');
+  setTimeout(()=>{if(m.classList.contains('out')){m.classList.remove('out');_close()}},190);
 };
-
-// ----- Calendar page: announcements + events, open to lecturers, admins and course reps -----
-window.isRep=()=>isSt()&&(window.REPOF||[]).length>0;
-const canPost=()=>isLec()||isAd()||isRep();
-V.cal=async function(){
-  let E=ok(await db.from('calendar_events').select('*').order('event_date'));
-  if(isSt())E=E.filter(e=>!e.level||e.level==me.level);
-  let AN=[];try{AN=ok(await db.from('notifications').select('*').eq('link_url','/broadcast').eq('target_role',me.role).order('created_at',{ascending:false}).limit(8))}catch(e){}
-  const C=canPost()?uniq(await myCourses()):[];
-  const now=new Date(),up=E.filter(e=>new Date(e.event_date)>=now),past=E.filter(e=>new Date(e.event_date)<now).reverse();
-  const evRow=(e,dim)=>`<div class="row" style="${dim?'opacity:.55':''}"><div><b>${H(e.title)}</b> <span class="tag">${H(e.event_type||'')}</span> ${e.level?`<span class="tag">${e.level}L</span>`:''}<div class="mu">${fd(e.event_date)}${e.description?' · '+H(e.description):''}</div></div>${(e.created_by_id==me.id||isAd())?`<button class="s d" onclick="delEv('${e.id}')">✕</button>`:''}</div>`;
-  const co=canPost()&&C.length?`<label>Course (optional)</label><select id="@"><option value="">Not tied to one course</option>${opts(C)}</select>`:'';
-  const forms=canPost()?`<details class="c"><summary>📣 Post an announcement</summary><p class="mu" style="margin-top:0">Goes to every student's Alerts and shows under Announcements below.</p>${co.replace('@','anc')}<label>Title</label><input id="ant"><label>Message</label><textarea id="anm" rows="3"></textarea><button class="p" onclick="annPost()">Send announcement</button><div id="anx" class="mu"></div></details>
-<details class="c"><summary>📅 Add an event</summary>${co.replace('@','evc')}<label>Title</label><input id="ct"><label>Type</label><select id="ce"><option>EVENT</option><option>EXAM</option><option>TEST</option><option>DEADLINE</option><option>LECTURE</option></select><label>Date and time</label><input id="cd" type="datetime-local"><label>For level</label><select id="cl"><option value="">All levels</option>${[100,200,300,400,500].map(x=>`<option${isSt()&&me.level==x?' selected':''}>${x}</option>`).join('')}</select><label>Details (optional)</label><input id="cn"><button class="p" onclick="evAdd()">Add to calendar</button><div id="cm" class="mu"></div></details>`:'';
-  v(`${forms}<div class="c"><h3>📣 Announcements</h3>${AN.map(n=>`<div class="ann"><b>${H(n.title||'Notice')}</b><div class="mu">${H(n.message||'')}</div><div class="mu" style="font-size:12px">${fd(n.created_at)}</div></div>`).join('')||'<span class="mu">No announcements yet.</span>'}</div>
-<div class="c"><h3>Upcoming</h3>${up.map(e=>evRow(e,false)).join('')||'<span class="mu">No upcoming events.</span>'}</div>${past.length?`<details class="c"><summary>Past events · ${past.length}</summary>${past.map(e=>evRow(e,true)).join('')}</details>`:''}`);
+window.setTheme=function(t){
+  const h=document.documentElement;h.classList.add('tt');_theme(t);
+  clearTimeout(window.__tt);window.__tt=setTimeout(()=>h.classList.remove('tt'),450);
 };
-
-window.evAdd=async function(){
-  const t0=$('#ct').value.trim(),d=$('#cd').value,m=$('#cm');
-  if(!t0||!d){m.textContent='Add a title and date.';return}
-  const cs=$('#evc'),code=cs&&cs.value?cs.selectedOptions[0].dataset.code:'',t=code?`${code}: ${t0}`:t0;
-  try{
-    const lv=$('#cl').value;
-    ok(await db.from('calendar_events').insert({title:t,description:$('#cn').value.trim()||null,event_date:new Date(d).toISOString(),level:lv?+lv:null,created_by_id:me.id,created_by_type:isSt()?'COURSE_REP':me.role,event_type:$('#ce').value}));
-    await notify([{target_role:'STUDENT',title:'New calendar event',message:`${t} · ${fd(d)}`,link_url:'/calendar'}]);
-    go('cal');
-  }catch(e){m.textContent=e.message}
-};
-window.annPost=async function(){
-  const t0=$('#ant').value.trim(),b=$('#anm').value.trim(),x=$('#anx');
-  if(!t0||!b){x.textContent='Add a title and message.';return}
-  const cs=$('#anc'),code=cs&&cs.value?cs.selectedOptions[0].dataset.code:'';
-  try{
-    ok(await notify([{target_role:'STUDENT',title:code?`[${code}] ${t0}`:t0,message:`${b} — ${me.name}, ${who()}`,link_url:'/broadcast'}]));
-    go('cal');
-  }catch(e){x.textContent=e.message}
-};
-if(typeof TD!='undefined')TD.cal='Events, deadlines and announcements';
-if(typeof TD!='undefined')TD.mat='Course files and notes backup';
+let io;
+const SEL='.ln-card,.ln-steps li,.ln-sec>h2,.ln-lead,.ln-band,.ln-foot';
+function arm(){
+  if(!('IntersectionObserver' in window))return;
+  io=io||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll(SEL).forEach(el=>{
+    if(el.dataset.rv)return;el.dataset.rv=1;el.classList.add('rv');
+    el.style.setProperty('--d',Math.min([...el.parentNode.children].indexOf(el),6)*.07+'s');io.observe(el);
+  });
+}
+new MutationObserver(()=>{if(document.querySelector('.ln'))arm()}).observe(document.getElementById('app'),{childList:true});
+arm();
 })();
 </script>
+
 </body>
 </html>

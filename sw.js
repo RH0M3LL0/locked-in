@@ -1,17 +1,41 @@
 // Computer and Robotics Education portal service worker.
-// - Page (navigation): opens instantly from the saved copy and refreshes it in the background.
+// - Page (navigation): network first, falls back to the saved copy when offline or slow.
 // - Own static files and CDN scripts/fonts: served from cache, refreshed in the background.
 // - Supabase API calls and anything else: never touched, always go to the network.
-const VERSION = "cre-portal-v14";
-const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/logo.svg"];
+const VERSION = "cre-portal-v10";
+const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/logo.svg"];
 const CDN = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const ROOT = new URL("./", self.location).href;
 
+// Saves the app files, plus the page's outside files (data library and fonts) so even the very first offline start works.
+// Nothing in here is allowed to stop the service worker from installing.
+async function precacheShell(cache) {
+  await Promise.allSettled(SHELL.map((u) => cache.add(new Request(u, { cache: "reload" }))));
+  try {
+    const html = await (await fetch("./", { cache: "reload" })).text();
+    const urls = [...new Set([...html.matchAll(/(?:src|href)="(https:\/\/(?:cdn\.jsdelivr\.net|fonts\.googleapis\.com)[^"]+)"/g)].map((m) => m[1]))];
+    for (const u of urls) {
+      try {
+        if (u.includes("fonts.googleapis.com")) {
+          const r = await fetch(u);
+          if (!r.ok) continue;
+          const css = await r.clone().text();
+          await cache.put(u, r);
+          const files = [...new Set([...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com[^)]+)\)/g)].map((m) => m[1]))].slice(0, 16);
+          await Promise.allSettled(files.map((f) => fetch(f).then((fr) => fr.ok && cache.put(f, fr))));
+        } else {
+          await cache.put(u, await fetch(new Request(u, { mode: "no-cors" })));
+        }
+      } catch (_e) { /* keep going */ }
+    }
+  } catch (_e) { /* the app files are already saved */ }
+}
+
 self.addEventListener("install", (e) => {
-  // Cache each file separately so one missing file can never stop the service worker from installing.
+  // A missing file must never stop the service worker from installing, or the app stops being installable.
   e.waitUntil(
     caches.open(VERSION)
-      .then((c) => Promise.all(SHELL.map((u) => c.add(u).catch(() => {}))))
+      .then((c) => precacheShell(c))
       .then(() => self.skipWaiting())
   );
 });
@@ -36,13 +60,13 @@ async function pageRequest(event) {
   const cache = await caches.open(VERSION);
   const cached = await cache.match(ROOT);
   const net = fetch(event.request).then((res) => {
-    if (res.ok) cache.put(ROOT, res.clone());
-    return res;
+    if (res.ok) { cache.put(ROOT, res.clone()); return res; }
+    return cached || res;
   });
   event.waitUntil(net.catch(() => {}));
-  // Saved copy exists: open instantly (no waiting on the network) and refresh it for next time.
-  if (cached) return cached;
-  return net.catch(() => offlinePage());
+  if (!cached) return net.catch(() => offlinePage());
+  // Slow network: after 4 seconds show the saved copy while the fresh one finishes loading.
+  return Promise.race([net, new Promise((r) => setTimeout(() => r(cached), 4000))]).catch(() => cached);
 }
 
 async function staleWhileRevalidate(request) {
