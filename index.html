@@ -431,21 +431,25 @@ body.out #app>*{grid-column:2}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 // ===== Redesign helpers: theme, shell, skeletons, network states =====
-const IC={home:'M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z',dir:'M16 20v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M9.5 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM21 20v-1a4 4 0 00-3-3.9M16 4.1a3.5 3.5 0 010 6.8',mat:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',exam:'M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9',res:'M4 20V10M10 20V4M16 20v-7M22 20H2',cal:'M4 6a2 2 0 012-2h12a2 2 0 012 2v14H4zM4 10h16M8 3v4M16 3v4',tk:'M3 9a2 2 0 002-2h14a2 2 0 002 2v0a2 2 0 000 6v0a2 2 0 00-2 2H5a2 2 0 00-2-2v0a2 2 0 000-6zM13 7v10',adm:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',nf:'M6 16V11a6 6 0 0112 0v5l2 2H4zM10 21h4',prof:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0',menu:'M4 6h16M4 12h16M4 18h16',expand:'M6 7l5 5-5 5M13 7l5 5-5 5',comp:'M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8zM12 8v4.2M12 15.6h.01',rep:'M9 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20.5v-.8A5.7 5.7 0 018.2 14h1.6a5.7 5.7 0 015.7 5.7v.8M18.00,3.50 L19.00,6.02 L21.71,6.19 L19.62,7.93 L20.29,10.56 L18.00,9.10 L15.71,10.56 L16.38,7.93 L14.29,6.19 L17.00,6.02z',rdesk:'M9 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20.5v-.8A5.7 5.7 0 018.2 14h1.6a5.7 5.7 0 015.7 5.7v.8M18.00,3.50 L19.00,6.02 L21.71,6.19 L19.62,7.93 L20.29,10.56 L18.00,9.10 L15.71,10.56 L16.38,7.93 L14.29,6.19 L17.00,6.02z',wifi:'M2 9a15 15 0 0120 0M5 13a10 10 0 0114 0M8.5 16.5a5 5 0 017 0M12 20h.01'};
+const IC={about:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01',home:'M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z',dir:'M16 20v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M9.5 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM21 20v-1a4 4 0 00-3-3.9M16 4.1a3.5 3.5 0 010 6.8',mat:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',exam:'M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9',res:'M4 20V10M10 20V4M16 20v-7M22 20H2',cal:'M4 6a2 2 0 012-2h12a2 2 0 012 2v14H4zM4 10h16M8 3v4M16 3v4',tk:'M3 9a2 2 0 002-2h14a2 2 0 002 2v0a2 2 0 000 6v0a2 2 0 00-2 2H5a2 2 0 00-2-2v0a2 2 0 000-6zM13 7v10',adm:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',nf:'M6 16V11a6 6 0 0112 0v5l2 2H4zM10 21h4',prof:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0',menu:'M4 6h16M4 12h16M4 18h16',expand:'M6 7l5 5-5 5M13 7l5 5-5 5',comp:'M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8zM12 8v4.2M12 15.6h.01',rep:'M9 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20.5v-.8A5.7 5.7 0 018.2 14h1.6a5.7 5.7 0 015.7 5.7v.8M18.00,3.50 L19.00,6.02 L21.71,6.19 L19.62,7.93 L20.29,10.56 L18.00,9.10 L15.71,10.56 L16.38,7.93 L14.29,6.19 L17.00,6.02z',rdesk:'M9 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20.5v-.8A5.7 5.7 0 018.2 14h1.6a5.7 5.7 0 015.7 5.7v.8M18.00,3.50 L19.00,6.02 L21.71,6.19 L19.62,7.93 L20.29,10.56 L18.00,9.10 L15.71,10.56 L16.38,7.93 L14.29,6.19 L17.00,6.02z',wifi:'M2 9a15 15 0 0120 0M5 13a10 10 0 0114 0M8.5 16.5a5 5 0 017 0M12 20h.01'};
 const ico=(k,n)=>`<svg width="${n||22}" height="${n||22}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
 const GR=[['Learn',['home','mat','exam','res']],['People and planning',['dir','cal']],['Support',['tk','adm','nf']],['Account',['prof']]];
 const curTheme=()=>localStorage.getItem('theme')||'system';
-function themeSeg(){const t=curTheme();return `<div class="seg" role="group" aria-label="Theme">${[['light','Light'],['dark','Dark'],['system','System']].map(([k,l])=>`<button class="${t==k?'on':''}" aria-pressed="${t==k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div>`}
-function setTheme(t){localStorage.setItem('theme',t);document.documentElement.dataset.theme=t;document.querySelectorAll('.seg').forEach(e=>e.outerHTML=themeSeg());const m=document.querySelector('meta[name=theme-color]');if(m)m.content='#0b3d27'}
+const TSW=[['light','Light','<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>'],
+['dark','Dark','<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>'],
+['system','System','<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>']];
+function themeSeg(){const t=curTheme(),i=Math.max(0,TSW.findIndex(x=>x[0]==t));return `<div class="tsw" role="radiogroup" aria-label="Theme" data-i="${i}"><i class="tsw-pill" aria-hidden="true"></i>${TSW.map(([k,l,s],n)=>`<button type="button" role="radio" class="${n==i?'on':''}" aria-checked="${n==i}" aria-label="${l}" title="${l}" onclick="setTheme('${k}')">${s}</button>`).join('')}</div>`}
+function tswSet(e,t){const i=Math.max(0,TSW.findIndex(x=>x[0]==t));e.dataset.i=i;e.querySelectorAll('button').forEach((b,n)=>{b.classList.toggle('on',n==i);b.setAttribute('aria-checked',String(n==i))})}
+function setTheme(t){localStorage.setItem('theme',t);document.documentElement.dataset.theme=t;document.querySelectorAll('.tsw').forEach(e=>tswSet(e,t));const m=document.querySelector('meta[name=theme-color]');if(m)m.content='#0b3d27'}
 function shell(nv){
 const items=nv.filter(k=>k!='prof'&&k!='tk'),exp=localStorage.getItem('navx')=='1';
 const mi=k=>`<button role="menuitem" class="${tab==k?'on':''}" onclick="go('${k}')" ${tab==k?'aria-current="page"':''} title="${TI[k][1]}"><span class="mic">${ico(k,22)}${k=='nf'?'<b id="nfb" class="nfb"></b>':''}</span><span class="mlb">${TI[k][1]}</span></button>`;
 const ini=H((me.name||'?').trim()[0]||'?').toUpperCase(),sub=`${H(me.name)} · ${RN[me.role]}${me.reg?' · '+H(me.reg):''} · Level ${me.level||'—'}`;
 const fab=nv.includes('tk')&&tab!='tk'?`<button class="fab" onclick="${isAd()?"go('tk')":'compOpen()'}" aria-label="${isAd()?'Open tickets':'Lay a complaint'}">${ico('comp',20)}<span>${isAd()?'Tickets':'Complaint'}</span></button>`:'';
 return `<div class="util"><div class="uin"><span><b>University of Nigeria, Nsukka</b></span><span class="ud">Faculty of Vocational and Technical Education</span><div class="uthm">${themeSeg()}</div></div></div>
-<div class="mast"><div class="min"><div class="menuwrap"><button id="mbtn" class="mbtn" aria-haspopup="menu" aria-expanded="false" aria-controls="mpan" onclick="menuTog(event)" aria-label="Menu">${ico('menu',22)}<span class="mcur">${TI[tab]?TI[tab][1]:'Menu'}</span></button><div id="mpan" class="mpan${exp?' exp':''}" role="menu" aria-label="Main menu" hidden><button type="button" class="mexp" onclick="menuExp(event)" aria-label="Show or hide names" title="Show or hide names"><span class="mic">${ico('expand',22)}</span><span class="mlb">Hide names</span></button><div class="msep"></div>${items.map(mi).join('')}<div class="msep"></div><button role="menuitem" class="${tab=='prof'?'on':''}" onclick="go('prof')" title="Profile"><span class="mic">${ico('prof',22)}</span><span class="mlb">Profile</span></button></div></div><div class="brand2"><i>${ico('adm',24)}</i><div><b>Computer and Robotics Education</b><small>${RN[me.role]} portal</small></div></div><div class="usr"><button class="who" onclick="go('prof')" aria-label="Your profile"><i>${ini}</i><span><b>${H(me.name)}</b><small>${RN[me.role]}</small></span></button><button class="s" onclick="out()">Sign out</button></div></div></div>
+<div class="mast"><div class="min"><div class="menuwrap"><button id="mbtn" class="mbtn" aria-haspopup="menu" aria-expanded="false" aria-controls="mpan" onclick="menuTog(event)" aria-label="Menu">${ico('menu',22)}<span class="mcur">${TI[tab]?TI[tab][1]:'Menu'}</span></button><div id="mpan" class="mpan${exp?' exp':''}" role="menu" aria-label="Main menu" hidden><button type="button" class="mexp" onclick="menuExp(event)" aria-label="Show or hide names" title="Show or hide names"><span class="mic">${ico('expand',22)}</span><span class="mlb">Hide names</span></button><div class="msep"></div>${items.map(mi).join('')}<div class="msep"></div><button role="menuitem" class="${tab=='prof'?'on':''}" onclick="go('prof')" title="Profile"><span class="mic">${ico('prof',22)}</span><span class="mlb">Profile</span></button></div></div><div class="brand2"><i>${ico('adm',24)}</i><div><b>Computer and Robotics Education</b><small>${RN[me.role]} portal</small></div></div><div class="usr"><button class="who" onclick="go('prof')" aria-label="Your profile"><i>${ini}</i><span><b>${H(me.name)}</b><small>${RN[me.role]}</small></span></button></div></div></div>
 <div class="wrap" data-tab="${tab}"><div class="ptitle"><div class="h1">${TI[tab][1]}</div><p>${sub}</p></div><div id="v"></div><div class="foot"><span>Department of Computer and Robotics Education · Faculty of Vocational and Technical Education · University of Nigeria, Nsukka</span><span><button onclick="go('home')">Home</button></span></div></div>${fab}`}
-const TD={rep:'Assign class reps',rdesk:'Set tests for your lecturer',dir:'Staff directory',mat:'Course PDFs',exam:'Tests and exams',res:'Scores and CGPA',cal:'Dates and deadlines',tk:'Get support',adm:'Manage the portal',nf:'Latest notices'};
+const TD={about:'How the portal works',rep:'Assign class reps',rdesk:'Set tests for your lecturer',dir:'Staff directory',mat:'Course PDFs',exam:'Tests and exams',res:'Scores and CGPA',cal:'Dates and deadlines',tk:'Get support',adm:'Manage the portal',nf:'Latest notices'};
 const SKEL=()=>`<div aria-busy="true" aria-label="Loading"><div class="g">${[0,1,2].map(()=>'<div class="c"><div class="sk" style="width:38%;height:14px"></div><div class="sk" style="width:80%;height:22px;margin:14px 0"></div><div class="sk" style="height:8px"></div></div>').join('')}</div><div class="c"><div class="sk" style="width:26%;height:16px;margin-bottom:12px"></div>${[0,1,2,3].map(()=>'<div class="row"><div class="sk" style="width:40px;height:40px;border-radius:12px;flex:none"></div><div style="flex:1"><div class="sk" style="width:62%;height:14px"></div><div class="sk" style="width:36%;height:12px;margin-top:8px"></div></div></div>').join('')}</div></div>`;
 const pb=on=>$('#pb')?.classList.toggle('on',!!on);
 function net(k){const e=$('#net');if(!e)return;const T={slow:['Slow connection','Still loading. Large pages can take a little longer.'],off:[navigator.onLine?'Showing saved data':'You are offline','Showing the last data saved on this device'+(window.OFFAT&&isFinite(window.OFFAT)?' ('+new Date(window.OFFAT).toLocaleString([],{dateStyle:'medium',timeStyle:'short'})+')':'')+'. Saving changes needs internet.'],err:['Could not load this page','Check your connection and try again.']}[k];if(!T){e.classList.remove('on');return}e.innerHTML=`${ico('wifi')}<div><b>${T[0]}</b><span class="mu">${T[1]}</span></div><button class="s" onclick="net('');R()">Retry</button>`;e.classList.add('on')}
@@ -501,8 +505,8 @@ async function refreshView(){try{window.OFFSTALE=false;window.OFFAT=Infinity;awa
 const db=supabase.createClient(CFG.URL,CFG.KEY,{global:{fetch:offlineFetch}});
 const $=s=>document.querySelector(s),H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fd=d=>d?new Date(d).toLocaleString([],{dateStyle:'medium',timeStyle:'short'}):'';
 const TB={STUDENT:'students',LECTURER:'lecturers',ADMIN:'admins'},REG=/^\d{4}\/\d{6}$/,RN={STUDENT:'Student',LECTURER:'Lecturer',ADMIN:'Admin'};
-const NAV={STUDENT:['home','dir','mat','exam','res','cal','tk','nf'],LECTURER:['home','dir','mat','exam','res','cal','nf'],ADMIN:['home','dir','mat','cal','tk','adm','nf']};
-const TI={home:['🏠','Home'],dir:['👥','Lecturers'],mat:['📄','Materials'],exam:['📝','Assess'],res:['🎯','Results'],cal:['📅','Calendar'],tk:['🎫','Tickets'],adm:['🛠','Admin'],nf:['🔔','Alerts'],prof:['👤','Profile'],rdesk:['⭐','Rep desk']};
+const NAV={STUDENT:['home','dir','mat','exam','res','cal','tk','about','nf'],LECTURER:['home','dir','mat','exam','res','cal','about','nf'],ADMIN:['home','dir','mat','cal','tk','adm','about','nf']};
+const TI={home:['🏠','Home'],dir:['👥','Lecturers'],mat:['📄','Materials'],exam:['📝','Assess'],res:['🎯','Results'],cal:['📅','Calendar'],tk:['🎫','Tickets'],adm:['🛠','Admin'],nf:['🔔','Alerts'],prof:['👤','Profile'],rdesk:['⭐','Rep desk'],about:['ℹ️','About']};
 let me=JSON.parse(localStorage.getItem('sess')||'null'),tab='home',draft=[],tm,DIR=[],MAT=[];
 const ok=r=>{if(r.error)throw new Error(r.error.message);return r.data};
 const v=h=>$('#v').innerHTML=h,err=e=>v(`<div class="c" style="border-color:var(--er)">${H(e.message)}</div>`),go=t=>{tab=t;R()};
@@ -520,39 +524,80 @@ function landOn(){
   }
   return window.LAND;
 }
-function showAuth(mode){window.LAND=false;R();if(mode==='signup')signup();window.scrollTo(0,0)}
-function showLanding(){window.LAND=true;R();window.scrollTo(0,0)}
+function showAuth(mode){window.ABOUT=false;window.LAND=false;R();if(mode==='signup')signup();window.scrollTo(0,0)}
+function showLanding(){window.ABOUT=false;window.LAND=true;R();window.scrollTo(0,0)}
+const LN_F=[['res','Results and CGPA','See your scores, grades and cumulative GPA for every session.'],
+['mat','Course materials','Download lecture PDFs and read AI-written summaries.'],
+['exam','Tests and practice','Take timed tests set by your lecturers and practise with AI drills.'],
+['cal','Calendar and reminders','Exam dates, deadlines and alerts before they happen.'],
+['tk','Support that starts with AI','Ask the AI assistant first, then send a ticket to the admin if you still need help.']];
+const LN_CHK='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
+function showAbout(){window.ABOUT=true;R();window.scrollTo(0,0)}
+function lnTop(){return`<div class="ln-top" role="banner"><a class="ln-brand" href="./" onclick="event.preventDefault();showLanding()" aria-label="Computer and Robotics Education Portal home"><img src="icons/logo.svg" width="38" height="38" alt=""><span class="ln-name"><span class="full">Computer and Robotics Education Portal</span><span class="short">CRE Portal</span></span></a><div class="ln-act"><button class="ln-btn ghost ln-about" onclick="showAbout()">About</button><button class="ln-btn ghost" onclick="showAuth()">Log in</button><button class="ln-btn gold" onclick="showAuth('signup')">Create account</button></div></div>`}
+function lnFoot(){return`<footer class="ln-foot"><p>Department of Computer and Robotics Education · Faculty of Vocational and Technical Education · University of Nigeria, Nsukka</p><p><button class="lnk" onclick="showAbout()">About</button> · <button class="lnk" onclick="showAuth()">Log in</button> · <button class="lnk" onclick="showAuth('signup')">Create account</button></p></footer>`}
+function aboutBody(){
+  const W=[['Students',['Check results, CGPA and class rank','Read course PDFs and AI summaries','Take timed tests and AI drills','Follow the calendar and alerts','Get help from the AI assistant first']],
+           ['Lecturers',['Upload course PDFs','Generate questions with AI and set tests','Upload results and review them','Assign class reps','Share dates on the calendar']],
+           ['Admins',['Manage students, lecturers and admins','Answer support tickets','Send announcements','Keep materials and results in order','Oversee tests set by lecturers and reps']]];
+  return`<div class="ab"><p class="ln-lead">Everything you need for your courses, in one place on your phone or computer.</p>
+<div class="ln-grid">${LN_F.map(f=>`<article class="ln-card"><i>${ico(f[0],22)}</i><h3>${f[1]}</h3><p>${f[2]}</p></article>`).join('')}</div>
+<h2 class="ab-h2">Who it is for</h2>
+<div class="ab-3">${W.map(w=>`<article class="ln-card"><h3>${w[0]}</h3><ul>${w[1].map(x=>`<li>${x}</li>`).join('')}</ul></article>`).join('')}</div>
+<h2 class="ab-h2">On every device</h2>
+<div class="ln-card"><p>The portal works on phones, tablets and laptops. Use "Install app" in your browser to add it to your home screen. If your connection drops, it shows the last data saved on your device, and saving changes needs internet.</p></div>
+<h2 class="ab-h2">The department</h2>
+<div class="ln-card"><p>Department of Computer and Robotics Education, Faculty of Vocational and Technical Education, University of Nigeria, Nsukka.</p></div></div>`;
+}
+function aboutPage(){return`<div class="ln">${lnTop()}<main><section class="ln-sec ab-sec"><button type="button" class="au-back" onclick="showLanding()" aria-label="Back to home">${AU_ARROW}<span>Back</span></button><h1 class="ab-h">About the Computer and Robotics Education Portal</h1>${aboutBody()}</section></main>${lnFoot()}</div>`}
 function landingView(){
-  const F=[['res','Results and CGPA','See your scores, grades and cumulative GPA for every session.'],
-           ['mat','Course materials','Download lecture PDFs and read AI-written summaries.'],
-           ['exam','Tests and practice','Take timed tests set by your lecturers and practise with AI drills.'],
-           ['cal','Calendar and reminders','Exam dates, deadlines and alerts before they happen.'],
-           ['tk','Support that starts with AI','Ask the AI assistant first, then send a ticket to the admin if you still need help.']];
-  const btns=(c)=>`<button class="ln-btn gold" onclick="showAuth()">Log in</button><button class="ln-btn ${c||'line'}" onclick="showAuth('signup')">Create account</button>`;
-  return`<div class="ln">
-<div class="ln-top" role="banner"><a class="ln-brand" href="./" aria-label="Computer and Robotics Education Portal home"><img src="icons/logo.svg" width="38" height="38" alt=""><span class="ln-name"><span class="full">Computer and Robotics Education Portal</span><span class="short">CRE Portal</span></span></a><div class="ln-act"><button class="ln-btn ghost" onclick="showAuth()">Log in</button><button class="ln-btn gold" onclick="showAuth('signup')">Create account</button></div></div>
+  const btns=c=>`<button class="ln-btn gold" onclick="showAuth()">Log in</button><button class="ln-btn ${c||'line'}" onclick="showAuth('signup')">Create account</button>`;
+  const T=['Create your account','Log in','Open your modules','Check your results','Download materials','Take a test','Never miss a deadline'],
+        tick=T.map(t=>`<span>${t}</span>`).join('');
+  const roles=[['Student',['Your registration number, like 2023/259021','Your name, email, phone and level','A password of 6 or more characters'],'Results, CGPA and rank, materials, tests, calendar and AI help.'],
+               ['Lecturer',['Your email and phone number','Your designation','The sign-up code from the department'],'Upload materials, generate questions, set tests, upload results.'],
+               ['Admin',['Your registration number and email','Your phone number','The sign-up code from the department'],'Manage users, tickets, announcements and the portal.']];
+  const after=['Your CGPA and your rank in your level','Course PDFs with AI-written summaries','Timed tests from your lecturers and AI drills','Calendar reminders a day before and when an event starts','Help from the AI assistant, then a ticket if you still need staff','A prompt to choose your own password if you are still on the default one'];
+  const faq=[['Which account do I choose?','Choose Student if you are a student, Lecturer if you teach, and Admin if the department made you an administrator. Lecturers and admins need the sign-up code from the department.'],
+             ['What does my registration number look like?','Four digits, a slash and six digits, for example 2023/259021.'],
+             ['I forgot my password. What now?','Tap "Forgot password?" on the sign-in page. A 6-digit code is emailed to the email on your account and expires in 10 minutes.'],
+             ['Can I use it on my phone?','Yes. It works on phones, tablets and laptops, and you can install it from your browser with "Install app".'],
+             ['Where do I find out more?','Open the About page for what each part of the portal does.']];
+  return`<div class="ln">${lnTop()}
 <main>
 <section class="ln-hero"><div class="ln-copy"><span class="hchip">University of Nigeria, Nsukka</span>
 <h1><span class="ln-k">Computer and Robotics Education Portal</span><span class="ln-t">Learn to code.<br>Learn to build.<br>Learn to teach.</span></h1>
 <p>The portal of the Department of Computer and Robotics Education, Faculty of Vocational and Technical Education, University of Nigeria, Nsukka.</p>
 <div class="ln-cta">${btns('line')}</div></div>
 <div class="ln-art" aria-hidden="true"><img src="icons/logo.svg" width="230" height="230" alt=""></div></section>
-<section class="ln-sec" aria-labelledby="abt-h"><h2 id="abt-h">About the Computer and Robotics Education Portal</h2>
-<p class="ln-lead">Everything you need for your courses, in one place on your phone or computer.</p>
-<div class="ln-grid">${F.map(f=>`<article class="ln-card"><i>${ico(f[0],22)}</i><h3>${f[1]}</h3><p>${f[2]}</p></article>`).join('')}</div></section>
+<div class="ln-tick" aria-hidden="true"><div class="ln-tk">${tick}${tick}</div></div>
 <section class="ln-sec" aria-labelledby="how-h"><h2 id="how-h">Getting started</h2>
-<ol class="ln-steps"><li><b>Create your account.</b><span>Students use their registration number. Lecturers and admins use their email.</span></li>
-<li><b>Log in.</b><span>Use the password you chose. You can reset it by email if you forget it.</span></li>
-<li><b>Open your modules.</b><span>Results, materials, tests, calendar and support are one tap away.</span></li></ol>
-<div class="ln-band"><div><h3>Ready to start?</h3><p>Students sign in with their registration number. Lecturers and admins sign in with their email.</p></div><div class="ln-cta">${btns('line')}</div></div></section>
+<p class="ln-lead">Three quick steps from sign-up to your first results. It takes about a minute.</p>
+<ol class="ln-steps ln-flow"><li><b>Create your account.</b><span>Students use their registration number. Lecturers and admins use their email and the sign-up code from the department.</span></li>
+<li><b>Log in.</b><span>Pick your account type and sign in with the password you chose. If you forget it, a code sent to your email resets it.</span></li>
+<li><b>Open your modules.</b><span>Results, materials, tests, calendar and support are one tap away.</span></li></ol></section>
+<section class="ln-sec" aria-labelledby="who-h"><h2 id="who-h">Which account do I need?</h2>
+<p class="ln-lead">Have these ready and sign-up is quick.</p>
+<div class="ln-roles">${roles.map(r=>`<article class="ln-role"><h3>${r[0]}</h3><p class="ln-sm">You need</p><ul>${r[1].map(x=>`<li>${x}</li>`).join('')}</ul><p class="ln-sm">You get</p><p>${r[2]}</p></article>`).join('')}</div></section>
+<section class="ln-sec" aria-labelledby="aft-h"><h2 id="aft-h">After you sign in</h2>
+<ul class="ln-checks">${after.map(a=>`<li><i>${LN_CHK}</i><span>${a}</span></li>`).join('')}</ul></section>
+<section class="ln-sec" aria-labelledby="faq-h"><h2 id="faq-h">Quick answers</h2>
+<div class="ln-faq">${faq.map(f=>`<details><summary>${f[0]}</summary><div class="ans">${f[1]}</div></details>`).join('')}</div></section>
+<section class="ln-sec"><div class="ln-band ln-band2"><div><h3>Ready when you are</h3><p>Create your account now, or log in if you already have one.</p></div><div class="ln-cta">${btns('line')}</div></div></section>
 </main>
-<footer class="ln-foot"><p>Department of Computer and Robotics Education · Faculty of Vocational and Technical Education · University of Nigeria, Nsukka</p><p><button class="lnk" onclick="showAuth()">Log in</button> · <button class="lnk" onclick="showAuth('signup')">Create account</button></p></footer>
+${lnFoot()}
 </div>`;
 }
-function authView(){return`<h1 class="sr">Computer and Robotics Education Portal</h1><button class="lnk ln-back" onclick="showLanding()">← Back to home</button><div class="lw c"><img src="icons/logo.svg" alt="" width="68" height="68" style="display:block;border-radius:19px;margin:0 0 14px;box-shadow:0 10px 26px rgba(15,81,50,.35)"><h2 style="margin:0 0 4px;color:var(--tx)">Sign in</h2><p class="mu" style="margin-top:0">Computer and Robotics Education Department • Secure Portal</p>${CFG.URL.includes('YOUR-PROJECT')?'<div class="tag er" style="margin-bottom:10px">Set CFG.URL and CFG.KEY at the top of the script.</div>':''}
-<label>I am a</label><select id="lr" onchange="lh()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="ll">Registration number</label><input id="li" autocapitalize="none" autocomplete="username"><label>Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="event.key=='Enter'&&login()">
+const AU_ARROW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
+function auShell(card){
+  const F=[['res','See your results and CGPA'],['mat','Download course materials'],['exam','Take tests and AI drills'],['cal','Never miss a deadline']];
+  return`<div class="au"><aside class="au-side"><img class="au-mark" src="icons/logo.svg" alt="" aria-hidden="true"><div class="au-brand"><img src="icons/logo.svg" width="56" height="56" alt=""><span>Computer and Robotics Education<small>University of Nigeria, Nsukka</small></span></div><div class="au-copy"><h1>Learn to code.<br>Learn to build.<br><span class="au-gold">Learn to teach.</span></h1><ul class="au-list">${F.map((f,i)=>`<li style="--i:${i}"><i>${ico(f[0],20)}</i><span>${f[1]}</span></li>`).join('')}</ul></div><p class="au-foot">Faculty of Vocational and Technical Education</p></aside><main class="au-main"><button type="button" class="au-back" onclick="showLanding()" aria-label="Back to home">${AU_ARROW}<span>Back</span></button><div class="au-card">${card}</div></main></div>`;
+}
+const auRoles=(id,fn)=>`<div class="au-roles" role="group" aria-label="I am a">${Object.keys(RN).map((r,i)=>`<button type="button" class="${i?'':'on'}" onclick="auPick('${id}','${r}',this)">${RN[r]}</button>`).join('')}<select id="${id}" class="sr" tabindex="-1" aria-hidden="true" onchange="${fn}">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`).join('')}</select></div>`;
+function auPick(id,r,b){const s=document.getElementById(id);s.value=r;b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));s.dispatchEvent(new Event('change'))}
+function authView(){return auShell(`<h2>Welcome back</h2><p class="au-sub">Sign in to your department portal.</p>${CFG.URL.includes('YOUR-PROJECT')?'<div class="tag er" style="margin-bottom:10px">Set CFG.URL and CFG.KEY at the top of the script.</div>':''}
+<label>I am a</label>${auRoles('lr','lh()')}<label id="ll" for="li">Registration number</label><input id="li" autocapitalize="none" autocomplete="username"><label for="lp">Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="event.key=='Enter'&&login()">
 <div id="er" class="tag er" style="background:none;padding:0;border:0"></div>
-<button class="p" style="width:100%;margin-top:8px" onclick="login()">Sign in →</button><div class="r" style="justify-content:space-between;margin-top:14px"><button class="lnk" onclick="fp()">Forgot password?</button><button class="lnk" onclick="signup()">Create account</button></div></div>`}
+<button class="p au-go" onclick="login()">Sign in →</button><div class="au-links"><button class="lnk" onclick="fp()">Forgot password?</button><button class="lnk" onclick="signup()">Create account</button></div>`)}
 function lh(){const r=$('#lr').value;$('#ll').textContent=r=='LECTURER'?'Email or phone number':r=='ADMIN'?'Registration number or email':'Registration number'}
 const msg=(t,c)=>{const e=$('#er');if(e){e.className='tag '+(c||'er');e.style.background='none';e.textContent=t}};
 function terms(){modal(`<h3>Terms & Conditions</h3><p class="mu">By using this portal you agree to: keep your login details private; use materials and assessments only for your coursework; not share assessment passcodes or answers; and accept that activity on the portal may be reviewed by department staff. Misuse can lead to account suspension.</p><button class="p" onclick="closeM()">Close</button>`)}
@@ -581,8 +626,8 @@ if(a.length<6)return fpSay('New password must be at least 6 characters.');
 if(a!==b)return fpSay('The two passwords do not match.');
 btn.disabled=true;fpSay('Changing…',1);
 try{await fpCall({action:'confirm',role:FPS.role,id:FPS.id,code,password:a});FPS={};closeM();msg('Password changed. Sign in with your new password.','ok')}catch(e){fpSay(e.message);btn.disabled=false}}
-function signup(){$('#app').innerHTML=`<div class="lw c"><button class="lnk ln-back" onclick="showLanding()" style="margin-bottom:8px">← Back to home</button><h2 style="margin:0 0 8px;color:var(--tx)">Create account</h2><label>I am a</label><select id="sr" onchange="sf()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label>Full name</label><input id="sn" autocomplete="name"><label>Email</label><input id="se" type="email" autocapitalize="none"><label>Phone number</label><input id="sh" type="tel"><div id="sx"></div><label>Password</label><input id="sp" type="password" autocomplete="new-password"><label>Confirm password</label><input id="sq" type="password" autocomplete="new-password">
-<label style="display:flex;align-items:center;color:var(--tx);margin:10px 0"><input type="checkbox" id="lt">I agree to the&nbsp;<button class="lnk" onclick="terms()">Terms & Conditions</button></label><div id="er" class="tag er" style="background:none;padding:0;border:0"></div><button class="p" style="width:100%;margin-top:8px" onclick="reg()">Create account →</button><button class="lnk" onclick="R()">Back to sign in</button></div>`;sf()}
+function signup(){$('#app').innerHTML=auShell(`<h2>Create account</h2><p class="au-sub">Join the portal in a minute.</p><label>I am a</label>${auRoles('sr','sf()')}<label>Full name</label><input id="sn" autocomplete="name"><label>Email</label><input id="se" type="email" autocapitalize="none"><label>Phone number</label><input id="sh" type="tel"><div id="sx"></div><label>Password</label><input id="sp" type="password" autocomplete="new-password"><label>Confirm password</label><input id="sq" type="password" autocomplete="new-password">
+<label style="display:flex;align-items:center;color:var(--tx);margin:10px 0"><input type="checkbox" id="lt">I agree to the&nbsp;<button class="lnk" onclick="terms()">Terms & Conditions</button></label><div id="er" class="tag er" style="background:none;padding:0;border:0"></div><button class="p au-go" onclick="reg()">Create account →</button><div class="au-links"><button class="lnk" onclick="R()">Already have an account? Sign in</button></div>`);sf();window.scrollTo(0,0)}
 function sf(){const r=$('#sr').value;$('#sx').innerHTML=(r=='LECTURER'?`<label>Designation</label><input id="sd" placeholder="e.g. Senior Lecturer"><label>Office location</label><input id="so">`:`<label>Registration number (YYYY/XXXXXX)</label><input id="sg" placeholder="2023/259021">`+(r=='ADMIN'?'':`<label>Level</label><select id="sl">${[100,200,300,400,500].map(x=>`<option>${x}</option>`)}</select>`))+(r=='STUDENT'?'':`<label>Sign-up code (from the department)</label><input id="sc" autocapitalize="none">`)}
 async function reg(){const g=i=>($('#'+i)?$('#'+i).value:'').trim(),r=g('sr');
 if(!$('#lt').checked)return msg('Please accept the Terms & Conditions.');if($('#sp').value.length<6||$('#sp').value!==$('#sq').value)return msg('Passwords must match (6+ characters).');
@@ -592,7 +637,7 @@ if(r=='LECTURER'){row.designation=g('sd')||'Lecturer';row.office_location=g('so'
 const{error}=await db.from(TB[r]).insert(row);if(error)return msg(error.code=='23505'?'That registration number, email or phone is already registered.':error.message);
 await R();msg('Account created. Sign in below.','ok')}
 // ---------- Shell ----------
-async function R(){clearInterval(tm);if(me&&!NAV[me.role]){me=null;localStorage.removeItem('sess')}const a=$('#app');document.body.classList.toggle('in',!!me);document.body.classList.toggle('out',!me);if(!me){window.stopAlerts&&stopAlerts();const L=landOn();document.body.classList.toggle('land',L);a.innerHTML=L?landingView():authView();document.getElementById('ld').classList.add('x');return}document.body.classList.remove('land');window.startAlerts&&startAlerts();window.pwGate&&pwGate();
+async function R(){clearInterval(tm);if(me&&!NAV[me.role]){me=null;localStorage.removeItem('sess')}const a=$('#app');document.body.classList.toggle('in',!!me);document.body.classList.toggle('out',!me);if(!me){window.stopAlerts&&stopAlerts();const L0=landOn(),AB=!!window.ABOUT,L=L0||AB;document.body.classList.toggle('land',L);a.innerHTML=AB?aboutPage():(L0?landingView():authView());document.getElementById('ld').classList.add('x');return}document.body.classList.remove('land');window.startAlerts&&startAlerts();window.pwGate&&pwGate();
 if(me.role=='STUDENT'&&(window.REPOF===undefined||tab=='home')){try{window.REPOF=ok(await db.rpc('student_rep_info',{p_student:me.id}))}catch(e){window.REPOF=window.REPOF||[]}}
 let nv=NAV[me.role];if(me.role=='STUDENT'&&(window.REPOF||[]).length)nv=nv.flatMap(k=>k=='exam'?['exam','rdesk']:[k]);window.NV=nv;if(!nv.includes(tab)&&tab!='prof')tab='home';
 a.innerHTML=shell(nv);
@@ -608,7 +653,7 @@ async dir(){DIR=ok(await db.from('lecturers').select('id,full_name,email,phone_n
 v(`<div class="c"><input id="dq" placeholder="Search name, course code or course title…" oninput="dl()" style="margin:0"></div><div class="g" id="dl"></div>`);dl()},
 async mat(){const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code').order('code').then(ok):[]]);
 MAT=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);
-v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)}</option>`)}</select><label>Title</label><input id="mt"><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}
+v(`${canUp()?`<div class="c"><h3>Upload material</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)}</option>`)}</select><label>Title</label><input id="mt"><label>Description (optional)</label><input id="md2"><label>PDF or image file</label><input id="mf" type="file" accept="application/pdf,image/*"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}
 <div class="c"><h3>Course materials</h3>${MAT.map(m=>{const own=m.uploaded_by_id==me.id||isAd();return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(m.courses.code)} · ${m.uploaded_by_type.replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)},
 async exam(){/* your original exam view continues here - truncated in source paste */ v(`<div class="c"><h3>Assessments</h3><p class="mu">Your original exam logic lives here. The reskin keeps all IDs/classes so your existing exam functions (ai(), aq(), pub() etc.) will work when you paste the rest of the file.</p><div class="tag">Paste remaining JS after this point</div></div>`)}
 };
@@ -861,22 +906,22 @@ async function lkRes(){
 V.mat=async function(){
   const[M,C]=await Promise.all([db.from('course_materials').select('*,courses(code,title)').order('created_at',{ascending:false}).then(ok),canUp()?db.from('courses').select('id,code,title').order('code').then(ok):[]]);
   const L=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);window.MATS=L;
-  v(`${canUp()?`<div class="c"><h3>Upload PDF</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF file</label><input id="mf" type="file" accept="application/pdf"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}<div class="c"><h3>Course materials</h3>${L.map(m=>{const own=m.uploaded_by_id==me.id||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)
+  v(`${canUp()?`<div class="c"><h3>Upload material</h3><label>Course</label><select id="mc">${C.map(c=>`<option value="${c.id}">${H(c.code)} - ${H(c.title)}</option>`).join('')}</select><label>Description (optional)</label><input id="md2"><label>PDF or image file</label><input id="mf" type="file" accept="application/pdf,image/*"><label style="display:flex;align-items:center;color:var(--tx);margin:8px 0"><input type="checkbox" id="mp" checked>Public (students can see it)</label><button class="p" onclick="upl()">Upload</button><div id="um" class="mu"></div></div>`:''}<div class="c"><h3>Course materials</h3>${L.map(m=>{const own=m.uploaded_by_id==me.id||isAd(),c=m.courses||{};return`<div class="row"><div><b>${H(m.title)}</b> ${m.is_public?'':'<span class="tag er">🔒 Private</span>'}<div class="mu">${H(c.code||'')} - ${H(c.title||'')} · ${String(m.uploaded_by_type||'').replace('_',' ').toLowerCase()} · ${fd(m.created_at)}</div></div><div class="r"><button class="s p" onclick="sumMat('${m.id}')">✨ Summarize</button><a href="${H(m.file_url)}" target="_blank" rel="noopener"><button class="s">Open</button></a>${own?`<button class="s" onclick="vis('${m.id}',${!m.is_public})">${m.is_public?'Make private':'Make public'}</button><button class="s d" onclick="delM('${m.id}')">✕</button>`:''}</div></div>`}).join('')||'<span class="mu">No materials yet.</span>'}</div>`)
 };
 async function upl(){
   const m=$('#um'),f=$('#mf').files[0],cid=$('#mc').value;
   if(!cid){m.textContent='Choose a course first.';return}
   if(!f){m.textContent='Choose a PDF file.';return}
-  if(f.type!='application/pdf'&&!/\.pdf$/i.test(f.name)){m.textContent='PDF files only.';return}
+  const isImg=/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name);if(f.type!='application/pdf'&&!/\.pdf$/i.test(f.name)&&!isImg){m.textContent='Choose a PDF or an image (JPG or PNG).';return}
   if(f.size>20e6){m.textContent='File is over 20 MB.';return}
   m.textContent='Uploading…';
   try{
     const label=$('#mc').selectedOptions[0].textContent,ccode=label.split(' - ')[0].replace(/\W+/g,'');
     const path=`${ccode}/${Date.now()}_${f.name.replace(/[^\w.\-]+/g,'_')}`;
-    const up=await db.storage.from('materials').upload(path,f,{contentType:'application/pdf'});
+    const up=await db.storage.from('materials').upload(path,f,{contentType:isImg?(f.type||'image/jpeg'):'application/pdf'});
     if(up.error)throw up.error;
     const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
-    const row={course_id:cid,title:f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:me.role};
+    const row={course_id:cid,title:f.name.replace(/\.(pdf|jpe?g|png|webp|gif|bmp)$/i,'').replace(/[_-]+/g,' ').trim(),file_url:url,is_public:$('#mp').checked,uploaded_by_id:me.id,uploaded_by_type:me.role};
     const d=$('#md2').value.trim();if(d)row.description=d;
     ok(await db.from('course_materials').insert(row));
     if(row.is_public)await notify([{target_role:'STUDENT',title:'New material',message:`${row.title} (${label})`,link_url:'/materials'}]);
@@ -1697,7 +1742,7 @@ V.mat=async function(){
   const sel=$('#mc');if(!sel)return;
   const A=ok(await db.from('course_rep_assignments').select('course_id').eq('rep_id',me.id)).map(a=>String(a.course_id));
   [...sel.options].forEach(o=>{if(!A.includes(o.value))o.remove()});
-  if(!sel.options.length){const card=sel.closest('.c');if(card)card.innerHTML='<h3>Upload PDF</h3><span class="mu">You have not been assigned to a course yet. A lecturer or admin can assign you.</span>'}
+  if(!sel.options.length){const card=sel.closest('.c');if(card)card.innerHTML='<h3>Upload material</h3><span class="mu">You have not been assigned to a course yet. A lecturer or admin can assign you.</span>'}
 };
 })();
 </script>
@@ -2293,7 +2338,7 @@ window.setTheme=function(t){
   clearTimeout(window.__tt);window.__tt=setTimeout(()=>h.classList.remove('tt'),450);
 };
 let io;
-const SEL='.ln-card,.ln-steps li,.ln-sec>h2,.ln-lead,.ln-band,.ln-foot';
+const SEL='.ln-card,.ln-steps li,.ln-sec>h2,.ln-lead,.ln-band,.ln-foot,.ln-role,.ln-checks li,.ln-faq details,.ab-h';
 function arm(){
   if(!('IntersectionObserver' in window))return;
   io=io||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -6% 0px'});
@@ -2304,6 +2349,270 @@ function arm(){
 }
 new MutationObserver(()=>{if(document.querySelector('.ln'))arm()}).observe(document.getElementById('app'),{childList:true});
 arm();
+})();
+</script>
+
+<style id="auth-css">
+/* ===== Sign-in / create-account: split layout. Logo and colours unchanged. ===== */
+body.out:not(.land) #app{display:block!important;max-width:none!important;margin:0!important;padding:0!important;min-height:100dvh}
+body.out:not(.land) #app::before{display:none!important}
+body.out:not(.land) #app>*{grid-column:auto!important}
+.au{display:grid;grid-template-columns:minmax(380px,42%) 1fr;min-height:100vh;min-height:100dvh;background:var(--bg)}
+.au-side{position:sticky;top:0;height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:clamp(28px,4vw,56px);color:#fff;isolation:isolate;
+ background:radial-gradient(circle at 100% 0,rgba(245,179,1,.30) 0 130px,transparent 131px),radial-gradient(circle at 0 100%,rgba(255,255,255,.07) 0 230px,transparent 231px),linear-gradient(160deg,#0b3d27 0%,#0f5132 45%,#14714a 100%);animation:mSlideRight .8s var(--ease) backwards}
+.au-side::before{content:"";position:absolute;inset:0;z-index:-1;background-image:radial-gradient(rgba(255,255,255,.11) 1px,transparent 1.6px);background-size:22px 22px;-webkit-mask-image:linear-gradient(135deg,transparent 25%,#000);mask-image:linear-gradient(135deg,transparent 25%,#000)}
+.au-mark{position:absolute;right:-80px;bottom:-70px;width:360px;opacity:.1;transform:rotate(-12deg);pointer-events:none;z-index:-1}
+.au-brand{display:flex;align-items:center;gap:14px;font:800 17px/1.2 var(--fd);letter-spacing:-.01em}
+.au-brand img{border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.3);flex:none}
+.au-brand small{display:block;margin-top:3px;font:500 13px var(--fb);color:rgba(255,255,255,.75);letter-spacing:0}
+.au-copy h1{margin:0;font:800 clamp(34px,4vw,60px)/1.05 var(--fd);letter-spacing:-.03em}
+.au-gold{color:var(--gold)}
+.au-list{list-style:none;margin:28px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.au-list li{display:flex;align-items:center;gap:12px;padding:9px 16px 9px 10px;border-radius:16px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-weight:600;font-size:14.5px;animation:mFadeUp .6s calc(.35s + var(--i)*.09s) var(--ease) backwards;transition:transform .25s var(--ease),background-color .2s}
+.au-list li:nth-child(even){margin-left:30px}
+.au-list li:hover{transform:translateX(4px);background:rgba(255,255,255,.14)}
+.au-list i{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--gold);color:#1a1400;flex:none}
+.au-foot{margin:0;font-size:12.5px;color:rgba(255,255,255,.7)}
+.au-main{display:flex;flex-direction:column;padding:clamp(20px,3vw,40px) clamp(24px,6vw,96px) 48px}
+.au-back{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px 0 12px;border-radius:999px;border:1px solid var(--border-2);background:var(--surface);color:var(--tx);font:700 14px var(--fb);box-shadow:var(--sh);animation:mFadeIn .5s .2s backwards}
+.au-back svg{transition:transform .25s var(--ease)}
+.au-back:hover{border-color:var(--ac2);background:var(--surface-2)}
+.au-back:hover svg{transform:translateX(-4px)}
+.au-card{width:100%;max-width:440px;margin:auto;padding:28px 0 0;animation:mFadeUp .6s .15s var(--ease) backwards}
+.au-card h2{margin:0;font:800 clamp(30px,3vw,38px)/1.1 var(--fd);letter-spacing:-.03em;color:var(--tx)}
+.au-sub{margin:8px 0 22px;color:var(--mu);font-size:15px}
+.au-card input:not([type=checkbox]),.au-card select{min-height:52px;border-radius:14px}
+.au-roles{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin:6px 0 16px;border-radius:14px;background:var(--surface-2);border:1px solid var(--border)}
+.au-roles button{min-height:42px;border:0;background:none;color:var(--mu);border-radius:10px;font:700 14px var(--fb);box-shadow:none}
+.au-roles button:hover{background:var(--hv);color:var(--tx)}
+.au-roles button.on{background:var(--ac2);color:#fff;box-shadow:0 4px 12px rgba(15,81,50,.28)}
+.au-go{width:100%;min-height:54px;margin-top:12px;font-size:15.5px;border-radius:14px}
+.au-links{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;margin-top:16px}
+@media(min-width:1500px){.au{grid-template-columns:minmax(560px,46%) 1fr}}
+@media(min-width:900px) and (max-height:680px){.au-list{display:none}}
+@media(max-width:899px){
+ .au{grid-template-columns:1fr}
+ .au-side{position:relative;height:auto;padding:22px 20px 26px;border-radius:0 0 28px 28px;gap:16px}
+ .au-copy h1{font-size:26px}.au-list,.au-foot,.au-mark{display:none}
+ .au-brand img{width:46px;height:46px}.au-brand{font-size:15px}
+ .au-main{padding:18px 20px 40px}
+ .au-card{padding-top:12px}
+}
+</style>
+
+<style id="v2css">
+/* ===== Layout pass: one size and spacing scale, form-beside-list on laptops ===== */
+:root{--gap:18px}
+.wrap{padding:28px clamp(16px,3vw,40px) 110px}
+.ptitle{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px 24px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.ptitle .h1{font-size:clamp(26px,3vw,34px)}
+.ptitle p{margin:0;font-size:13.5px;text-align:right}
+.c{padding:clamp(16px,2vw,24px);margin-bottom:var(--gap)}
+.c h3{margin:0 0 16px;font-size:17px}
+.g{gap:var(--gap)}
+.row{padding:14px 4px;gap:16px}
+.row>.r{flex:none;justify-content:flex-end}
+input,select,textarea{min-height:48px;margin:6px 0 14px}
+label{margin-top:4px}
+button{min-height:44px;padding:11px 18px}
+button.s{min-height:38px;padding:8px 14px}
+th,td{padding:12px 14px}
+h3.sec{margin:30px 0 14px}
+.foot{margin-top:40px;padding-top:20px}
+.usr{gap:8px}
+.so p{margin:0 0 14px}
+#v [hidden]{display:none!important}
+@media(max-width:640px){.ptitle p{text-align:left}.row{flex-wrap:wrap}.row>.r{justify-content:flex-start}}
+@media(min-width:1100px){
+ .wrap[data-tab=mat] #v:has(>.c:nth-child(2)),.wrap[data-tab=cal] #v:has(>.c:nth-child(2)),.wrap[data-tab=tk] #v:has(>.c:nth-child(2)){display:grid;grid-template-columns:minmax(320px,400px) minmax(0,1fr);gap:0 var(--gap);align-items:start}
+ .wrap[data-tab=mat] #v:has(>.c:nth-child(2))>.c:not(:last-child),.wrap[data-tab=cal] #v:has(>.c:nth-child(2))>.c:not(:last-child),.wrap[data-tab=tk] #v:has(>.c:nth-child(2))>.c:not(:last-child){grid-column:1}
+ .wrap[data-tab=mat] #v:has(>.c:nth-child(2))>.c:last-child,.wrap[data-tab=cal] #v:has(>.c:nth-child(2))>.c:last-child,.wrap[data-tab=tk] #v:has(>.c:nth-child(2))>.c:last-child{grid-column:2;grid-row:1/span 4}
+ .wrap[data-tab=mat] #v:has(>.c:nth-child(2))>.c:first-child,.wrap[data-tab=cal] #v:has(>.c:nth-child(2))>.c:first-child{position:sticky;top:96px}
+}
+
+/* ===== Theme switch: animated icons ===== */
+.uthm{width:auto!important}
+.tsw{position:relative;display:inline-grid;grid-template-columns:repeat(3,34px);padding:3px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}
+.tsw-pill{position:absolute;left:3px;top:3px;width:34px;height:34px;border-radius:50%;background:var(--gold);box-shadow:0 4px 12px rgba(0,0,0,.25);transition:transform .38s var(--ease)}
+.tsw[data-i="1"] .tsw-pill{transform:translateX(100%)}
+.tsw[data-i="2"] .tsw-pill{transform:translateX(200%)}
+.tsw button{position:relative;z-index:1;display:grid;place-items:center;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:50%;background:none;color:#cfe3d8;box-shadow:none;transition:color .25s,transform .18s var(--ease)}
+.tsw button:hover{background:rgba(255,255,255,.12);transform:none}
+.tsw button:active{transform:scale(.86)}
+.tsw button.on{color:#1a1400;background:none}
+@keyframes tSun{from{transform:rotate(-120deg) scale(.5)}to{transform:none}}
+@keyframes tMoon{from{transform:rotate(45deg) scale(.5)}to{transform:none}}
+@keyframes tMon{0%{transform:scale(.4)}60%{transform:scale(1.2)}100%{transform:none}}
+.tsw button:nth-child(2).on svg{animation:tSun .6s var(--ease)}
+.tsw button:nth-child(3).on svg{animation:tMoon .6s var(--ease)}
+.tsw button:nth-child(4).on svg{animation:tMon .5s var(--ease)}
+
+/* ===== Materials: grouped by course ===== */
+.mg-tools{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.mg-tools input{margin:0}
+.mg-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.mg-tabs button{flex:none;min-height:38px;padding:7px 14px;border-radius:999px;background:var(--surface-2);font-size:13.5px;white-space:nowrap}
+.mg-tabs button b{display:inline-grid;place-items:center;min-width:22px;height:22px;margin-left:6px;padding:0 6px;border-radius:99px;background:var(--surface);font-size:12px}
+.mg-tabs button.on{background:var(--ac2);color:#fff;border-color:transparent}
+.mg-tabs button.on b{background:rgba(255,255,255,.22)}
+.mg-list{display:flex;flex-direction:column;gap:12px}
+.mg-list.fx{animation:mFadeUp .35s var(--ease)}
+.mg{border:1px solid var(--border);border-radius:16px;background:var(--surface)}
+.mg-h{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;border-radius:16px;background:var(--surface-2);text-align:left;font-size:15px;box-shadow:none}
+.mg-h b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mg-ic{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:color-mix(in srgb,var(--ac2) 14%,var(--surface));color:var(--nv);flex:none}
+.mg-ch{transition:transform .3s var(--ease);flex:none}
+.mg.cl .mg-ch{transform:rotate(-90deg)}
+.mg-b{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s var(--ease)}
+.mg.cl .mg-b{grid-template-rows:0fr}
+.mg-bi{overflow:hidden;min-height:0;padding:0 12px}
+.mg-b .row,.mg-b .row:hover{margin:0;padding:14px 4px;border-radius:0}
+.mg-b .row .r a{display:contents}
+@media(max-width:640px){.mg-b .row{flex-direction:column;align-items:stretch}.mg-b .row .r{justify-content:stretch}.mg-b .row .r button{flex:1}}
+
+/* ===== OCR progress ===== */
+#ocrp{position:fixed;left:50%;bottom:92px;z-index:70;width:min(420px,calc(100% - 28px));padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--border-2);box-shadow:0 14px 36px rgba(0,0,0,.3);opacity:0;transform:translate(-50%,16px) scale(.96);transition:opacity .25s,transform .3s var(--ease);pointer-events:none}
+#ocrp.on{opacity:1;transform:translate(-50%,0)}
+#ocrp b{display:block;font-size:14px}
+#ocrp span{display:block;margin:2px 0 10px}
+.ocr-bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.ocr-bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--ac2);transition:width .3s}
+
+/* ===== Landing: getting started, roles, checks, FAQ, ticker ===== */
+@keyframes mTick{to{transform:translateX(-50%)}}
+@keyframes mNudge{50%{right:-36px}}
+@keyframes mGlow{0%{box-shadow:0 0 0 0 rgba(245,179,1,.55)}70%{box-shadow:0 0 0 16px rgba(245,179,1,0)}100%{box-shadow:0 0 0 0 rgba(245,179,1,0)}}
+@media(max-width:559px){.ln-about{display:none}}
+.ln-tick{max-width:var(--maxw);width:calc(100% - 28px);margin:16px auto 0;overflow:hidden;border-radius:999px;background:var(--surface);border:1px solid var(--border);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ln-tk{display:flex;width:max-content;padding:12px 0;animation:mTick 32s linear infinite;color:var(--tx2);font-weight:700;font-size:14px}
+.ln-tk span{display:flex;align-items:center;gap:34px;padding-right:34px;white-space:nowrap}
+.ln-tk span::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.ln-sm{margin:14px 0 4px!important;font-size:12.5px;font-weight:700;color:var(--mu)!important;text-transform:uppercase;letter-spacing:.06em}
+.ln-roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.ln-role{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;transition:transform .25s var(--ease),border-color .2s,box-shadow .25s}
+.ln-role:hover{transform:translateY(-4px);border-color:var(--ac2);box-shadow:var(--sh)}
+.ln-role h3{margin:0;font-size:20px}
+.ln-role p{margin:0;color:var(--tx2);font-size:15px}
+.ln-role ul{margin:0;padding-left:18px;color:var(--tx2);font-size:15px}
+.ln-role li{margin:4px 0}
+.ln-checks{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.ln-checks li{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;font-size:15px}
+.ln-checks i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--gr);color:#fff;flex:none;transition:transform .3s var(--ease)}
+.ln-checks li:hover i{transform:scale(1.15) rotate(-8deg)}
+.ln-faq{margin-top:16px}
+.ln-faq details{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0 18px;margin-bottom:10px;transition:border-color .2s}
+.ln-faq details[open]{border-color:var(--ac2)}
+.ln-faq summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;font-weight:700;cursor:pointer;list-style:none}
+.ln-faq summary::-webkit-details-marker{display:none}
+.ln-faq summary::after{content:"+";font-size:24px;line-height:1;color:var(--ac2);transition:transform .3s var(--ease)}
+.ln-faq details[open] summary::after{transform:rotate(45deg)}
+.ln-faq .ans{padding:0 0 16px;color:var(--tx2);animation:mFadeUp .35s var(--ease)}
+.ln-band2 .ln-btn.gold{animation:mGlow 2.4s ease-out infinite}
+.ln-flow li b{font-size:17px}
+@media(min-width:900px){
+ .ln-flow{gap:44px}
+ .ln-flow li:not(:last-child)::after{content:"";position:absolute;right:-32px;top:50%;width:16px;height:16px;border-top:3px solid var(--gold);border-right:3px solid var(--gold);transform:translateY(-50%) rotate(45deg);animation:mNudge 1.8s ease-in-out infinite}
+}
+/* about */
+.ab-sec{padding-bottom:10px}
+.ab-h{margin:18px 0 6px;font:800 clamp(28px,4vw,40px)/1.1 var(--fd);letter-spacing:-.02em}
+.ab-h2{margin:34px 0 14px;font-size:clamp(20px,2.6vw,26px)}
+.ab-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ab ul{margin:8px 0 0;padding-left:18px;color:var(--tx2)}
+.ab .ln-card p{color:var(--tx2)}
+.ab .ln-lead{margin-top:0}
+</style>
+<script id="v2">
+// ===== Materials grouped by course, with counts, tabs and search =====
+(function(){
+const FOLDER='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>',
+CHEV='<svg class="mg-ch" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+nf=n=>n+' file'+(n==1?'':'s'),prev=V.mat;
+V.mat=async function(){
+  await prev();
+  const card=[...document.querySelectorAll('#v>.c')].find(c=>{const h=c.querySelector(':scope>h3');return h&&h.textContent.trim()==='Course materials'});
+  if(!card)return;
+  const rows=[...card.querySelectorAll(':scope>.row')];
+  if(!rows.length)return;
+  const map=new Map();
+  rows.forEach(r=>{const mu=r.querySelector('.mu'),lab=((mu?mu.textContent.split(' · ')[0]:'')||'').trim()||'Other',b=r.querySelector('b');r.dataset.t=(b?b.textContent:'').toLowerCase();(map.get(lab)||map.set(lab,[]).get(lab)).push(r)});
+  const labs=[...map.keys()].sort((a,b)=>a.localeCompare(b)),code=l=>l.split(' - ')[0];
+  card.innerHTML=`<h3>Course materials <span class="tag ok">${nf(rows.length)}</span></h3><div class="mg-tools"><input type="search" class="mg-q" placeholder="Search materials" aria-label="Search materials"><div class="mg-tabs" role="tablist"><button type="button" role="tab" class="on" data-k="">All <b>${rows.length}</b></button>${labs.map(l=>`<button type="button" role="tab" data-k="${H(l)}" title="${H(l)}">${H(code(l))} <b>${map.get(l).length}</b></button>`).join('')}</div></div><div class="mg-list"></div><p class="mu mg-none" hidden>No files match your search.</p>`;
+  const list=card.querySelector('.mg-list'),none=card.querySelector('.mg-none'),q=card.querySelector('.mg-q'),G=[];let sel='';
+  labs.forEach(l=>{
+    const el=document.createElement('section');el.className='mg';
+    el.innerHTML=`<button type="button" class="mg-h" aria-expanded="true"><span class="mg-ic">${FOLDER}</span><b>${H(l)}</b><span class="tag">${nf(map.get(l).length)}</span>${CHEV}</button><div class="mg-b"><div class="mg-bi"></div></div>`;
+    const bi=el.querySelector('.mg-bi'),h=el.querySelector('.mg-h');
+    map.get(l).forEach(r=>bi.appendChild(r));
+    h.onclick=()=>{const c=el.classList.toggle('cl');h.setAttribute('aria-expanded',String(!c))};
+    list.appendChild(el);G.push({l,el,rows:map.get(l),tag:el.querySelector('.tag')});
+  });
+  const apply=()=>{
+    const t=q.value.trim().toLowerCase();let shown=0;
+    G.forEach(g=>{let n=0;g.rows.forEach(r=>{const hit=!t||r.dataset.t.includes(t);r.hidden=!hit;if(hit)n++});
+      const vis=(!sel||g.l===sel)&&n>0;g.el.hidden=!vis;g.tag.textContent=t?n+' of '+nf(g.rows.length):nf(g.rows.length);if(vis)shown+=n});
+    none.hidden=shown>0;
+  };
+  q.addEventListener('input',apply);
+  card.querySelector('.mg-tabs').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    card.querySelectorAll('.mg-tabs button').forEach(x=>x.classList.toggle('on',x===b));
+    sel=b.dataset.k;G.forEach(g=>{if(!sel||g.l===sel)g.el.classList.remove('cl')});apply();
+    list.classList.remove('fx');void list.offsetWidth;list.classList.add('fx');
+  });
+};
+})();
+
+// ===== OCR: scanned PDFs and image files are read in the browser (Tesseract.js) =====
+(function(){
+const IMG=/\.(jpe?g|png|webp|gif|bmp)(\?|#|$)/i;let bar=null;
+const say=(a,b,p)=>{
+  if(!bar){bar=document.createElement('div');bar.id='ocrp';bar.setAttribute('role','status');bar.innerHTML='<b></b><span class="mu"></span><div class="ocr-bar"><i></i></div>';document.body.appendChild(bar);requestAnimationFrame(()=>bar&&bar.classList.add('on'))}
+  bar.querySelector('b').textContent=a;bar.querySelector('span').textContent=b||'';bar.querySelector('i').style.width=Math.round((p||0)*100)+'%';
+};
+const done=()=>{if(bar){const b=bar;bar=null;b.classList.remove('on');setTimeout(()=>b.remove(),320)}};
+async function ocr(sources){
+  say('Preparing the reader…','The first time can take a moment',.02);
+  await loadJs('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+  let cur=0;const n=sources.length;
+  const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')say('Reading scanned text…','Page '+(cur+1)+' of '+n,(cur+m.progress)/n)}});
+  try{const out=[];for(;cur<n;cur++){const r=await w.recognize(await sources[cur]());out.push(r.data.text)}return out.join('\n')}
+  finally{await w.terminate()}
+}
+const clean=t=>String(t).replace(/\s+/g,' ').trim();
+async function readMaterial(url,limit){
+  let text='';
+  try{
+    const res=await fetch(url);if(!res.ok)throw new Error('Could not open this file.');
+    const ct=res.headers.get('content-type')||'';
+    if(/^image\//.test(ct)||IMG.test(url)){const blob=await res.blob();text=clean(await ocr([async()=>blob]))}
+    else{
+      const buf=await res.arrayBuffer();
+      text=clean((await pdfLines(buf.slice(0))).join(' '));
+      if(text.length<200){
+        const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise,pages=Math.min(pdf.numPages,15);
+        const src=Array.from({length:pages},(_,i)=>async()=>{const pg=await pdf.getPage(i+1),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;return c});
+        text=clean(await ocr(src));
+      }
+    }
+  }finally{done()}
+  if(text.length<60)throw new Error('Could not read any text from this file. Try a clearer scan or photo.');
+  return text.slice(0,limit);
+}
+const url=async id=>ok(await db.from('course_materials').select('file_url').eq('id',id).limit(1))[0].file_url;
+window.matText=async function(id){if(MTX[id])return MTX[id];return MTX[id]=await readMaterial(await url(id),40000)};
+window.matTextAll=async function(id){const k='F'+id;if(MTX[k])return MTX[k];return MTX[k]=await readMaterial(await url(id),180000)};
+})();
+
+// ===== About tab and sign out inside Profile =====
+V.about=async()=>{v(aboutBody())};
+(function(){
+const pp=V.prof;
+V.prof=async function(){
+  await pp.apply(this,arguments);
+  $('#v').insertAdjacentHTML('beforeend','<div class="c so"><h3>Sign out</h3><p class="mu">Sign out of this device. You will need your password to sign in again.</p><button class="d" onclick="signOutAsk()">Sign out</button></div>');
+};
+window.signOutAsk=()=>modal('<h3>Sign out?</h3><p class="mu" style="margin-top:0">You will need your password to sign in again.</p><div class="r"><button class="d" onclick="closeM();out()">Sign out</button><button class="p" onclick="closeM()">Stay signed in</button></div>');
 })();
 </script>
 
