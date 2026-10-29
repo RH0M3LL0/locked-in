@@ -2462,9 +2462,11 @@ h3.sec{margin:30px 0 14px}
 .mg-h b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mg-ic{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:color-mix(in srgb,var(--ac2) 14%,var(--surface));color:var(--nv);flex:none}
 .mg-ch{transition:transform .3s var(--ease);flex:none}
-.mg.cl .mg-ch{transform:rotate(-90deg)}
+.mg.shut .mg-ch{transform:rotate(-90deg)}
 .mg-b{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s var(--ease)}
-.mg.cl .mg-b{grid-template-rows:0fr}
+.mg.shut .mg-b{grid-template-rows:0fr}
+.mg-bar{display:flex;justify-content:flex-end}
+.mg-bar button{min-height:34px;padding:6px 14px;font-size:13px}
 .mg-bi{overflow:hidden;min-height:0;padding:0 12px}
 .mg-b .row,.mg-b .row:hover{margin:0;padding:14px 4px;border-radius:0}
 .mg-b .row .r a{display:contents}
@@ -2537,14 +2539,17 @@ V.mat=async function(){
   const map=new Map();
   rows.forEach(r=>{const mu=r.querySelector('.mu'),lab=((mu?mu.textContent.split(' · ')[0]:'')||'').trim()||'Other',b=r.querySelector('b');r.dataset.t=(b?b.textContent:'').toLowerCase();(map.get(lab)||map.set(lab,[]).get(lab)).push(r)});
   const labs=[...map.keys()].sort((a,b)=>a.localeCompare(b)),code=l=>l.split(' - ')[0];
-  card.innerHTML=`<h3>Course materials <span class="tag ok">${nf(rows.length)}</span></h3><div class="mg-tools"><input type="search" class="mg-q" placeholder="Search materials" aria-label="Search materials"><div class="mg-tabs" role="tablist"><button type="button" role="tab" class="on" data-k="">All <b>${rows.length}</b></button>${labs.map(l=>`<button type="button" role="tab" data-k="${H(l)}" title="${H(l)}">${H(code(l))} <b>${map.get(l).length}</b></button>`).join('')}</div></div><div class="mg-list"></div><p class="mu mg-none" hidden>No files match your search.</p>`;
-  const list=card.querySelector('.mg-list'),none=card.querySelector('.mg-none'),q=card.querySelector('.mg-q'),G=[];let sel='';
+  card.innerHTML=`<h3>Course materials <span class="tag ok">${nf(rows.length)}</span></h3><div class="mg-tools"><input type="search" class="mg-q" placeholder="Search materials" aria-label="Search materials"><div class="mg-tabs" role="tablist"><button type="button" role="tab" class="on" data-k="">All <b>${rows.length}</b></button>${labs.map(l=>`<button type="button" role="tab" data-k="${H(l)}" title="${H(l)}">${H(code(l))} <b>${map.get(l).length}</b></button>`).join('')}</div></div><div class="mg-bar"><button type="button" class="s mg-all">Collapse all</button></div><div class="mg-list"></div><p class="mu mg-none" hidden>No files match your search.</p>`;
+  const list=card.querySelector('.mg-list'),none=card.querySelector('.mg-none'),q=card.querySelector('.mg-q'),allB=card.querySelector('.mg-all'),G=[],t0=Date.now();let sel='';
+  const lab=()=>{allB.textContent=G.some(g=>!g.el.classList.contains('shut'))?'Collapse all':'Expand all'};
+  const setAll=open=>{G.forEach(g=>{g.el.classList.toggle('shut',!open);g.el.querySelector('.mg-h').setAttribute('aria-expanded',String(open))});lab()};
+  allB.onclick=()=>setAll(allB.textContent=='Expand all');
   labs.forEach(l=>{
     const el=document.createElement('section');el.className='mg';
     el.innerHTML=`<button type="button" class="mg-h" aria-expanded="true"><span class="mg-ic">${FOLDER}</span><b>${H(l)}</b><span class="tag">${nf(map.get(l).length)}</span>${CHEV}</button><div class="mg-b"><div class="mg-bi"></div></div>`;
     const bi=el.querySelector('.mg-bi'),h=el.querySelector('.mg-h');
     map.get(l).forEach(r=>bi.appendChild(r));
-    h.onclick=()=>{const c=el.classList.toggle('cl');h.setAttribute('aria-expanded',String(!c))};
+    h.onclick=()=>{if(Date.now()-t0<600)return;const c=el.classList.toggle('shut');h.setAttribute('aria-expanded',String(!c));lab()};
     list.appendChild(el);G.push({l,el,rows:map.get(l),tag:el.querySelector('.tag')});
   });
   const apply=()=>{
@@ -2553,11 +2558,12 @@ V.mat=async function(){
       const vis=(!sel||g.l===sel)&&n>0;g.el.hidden=!vis;g.tag.textContent=t?n+' of '+nf(g.rows.length):nf(g.rows.length);if(vis)shown+=n});
     none.hidden=shown>0;
   };
-  q.addEventListener('input',apply);
+  q.addEventListener('input',()=>{if(q.value.trim())setAll(true);apply()});
+  setAll(true);
   card.querySelector('.mg-tabs').addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     card.querySelectorAll('.mg-tabs button').forEach(x=>x.classList.toggle('on',x===b));
-    sel=b.dataset.k;G.forEach(g=>{if(!sel||g.l===sel)g.el.classList.remove('cl')});apply();
+    sel=b.dataset.k;setAll(true);apply();
     list.classList.remove('fx');void list.offsetWidth;list.classList.add('fx');
   });
 };
@@ -2715,7 +2721,7 @@ window.signOutAsk=()=>modal('<h3>Sign out?</h3><p class="mu" style="margin-top:0
 
 /* materials rows */
 .mt-ic{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:color-mix(in srgb,var(--ac2) 14%,var(--surface));color:var(--nv);font:800 11px var(--fb);letter-spacing:.04em;flex:none}
-.mt-ic.img{background:color-mix(in srgb,var(--gold) 28%,var(--surface));color:#6b4a00}
+.mt-ic.img{background:color-mix(in srgb,var(--gold) 28%,var(--surface));color:color-mix(in srgb,var(--gold) 45%,var(--tx))}
 .mg-b .row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px 14px;padding:16px 4px}
 .mg-b .row>.r{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
 .mg-b .row>.r>*{flex:0 0 auto}
