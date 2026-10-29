@@ -2,7 +2,7 @@
 // - Page (navigation): network first, falls back to the saved copy when offline or slow.
 // - Own static files and CDN scripts/fonts: served from cache, refreshed in the background.
 // - Supabase API calls and anything else: never touched, always go to the network.
-const VERSION = "cre-portal-v10";
+const VERSION = "cre-portal-v11";
 const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/logo.svg"];
 const CDN = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const ROOT = new URL("./", self.location).href;

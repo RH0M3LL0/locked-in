@@ -668,7 +668,7 @@ async function pub(){ /* publish */ }
 
 // init
 setTimeout(()=>{ if(!me) document.getElementById('ld').classList.add('x'); }, 1200);
-R();
+/* the first screen is drawn by the last script on the page, after every layer has loaded */
 document.getElementById('md').addEventListener('click', e=>{ if(e.target.id==='md') closeM() });
 </script>
 <style>
@@ -2571,12 +2571,21 @@ const say=(a,b,p)=>{
   bar.querySelector('b').textContent=a;bar.querySelector('span').textContent=b||'';bar.querySelector('i').style.width=Math.round((p||0)*100)+'%';
 };
 const done=()=>{if(bar){const b=bar;bar=null;b.classList.remove('on');setTimeout(()=>b.remove(),320)}};
+const ocrAsk=()=>new Promise(res=>{
+  let d=0;const f=x=>{if(!d){d=1;res(x)}};
+  window.__ocrAns=x=>{closeM();f(x)};
+  modal('<h3>Read this scanned file?</h3><p class="mu" style="margin-top:0">This file has no text the portal can read directly, so it has to be read with OCR. The first time, this downloads about 10 MB of reading tools. After that it works from your device.</p><div class="r"><button class="p" onclick="__ocrAns(true)">Download and read</button><button onclick="__ocrAns(false)">Cancel</button></div>');
+  const m=document.getElementById('md'),iv=setInterval(()=>{if(!m||!m.classList.contains('on')){clearInterval(iv);f(false)}},300);
+});
 async function ocr(sources){
+  let known=false;try{known=localStorage.getItem('ocrok')=='1'}catch(e){}
+  const c=navigator.connection||{};
+  if(!known&&c.type!='wifi'&&!(await ocrAsk()))throw new Error('Cancelled. Scanned files need the one-time download before they can be read.');
   say('Preparing the reader…','The first time can take a moment',.02);
   await loadJs('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
   let cur=0;const n=sources.length;
   const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')say('Reading scanned text…','Page '+(cur+1)+' of '+n,(cur+m.progress)/n)}});
-  try{const out=[];for(;cur<n;cur++){const r=await w.recognize(await sources[cur]());out.push(r.data.text)}return out.join('\n')}
+  try{const out=[];for(;cur<n;cur++){const r=await w.recognize(await sources[cur]());out.push(r.data.text)}try{localStorage.setItem('ocrok','1')}catch(e){}return out.join('\n')}
   finally{await w.terminate()}
 }
 const clean=t=>String(t).replace(/\s+/g,' ').trim();
@@ -2615,6 +2624,208 @@ V.prof=async function(){
 window.signOutAsk=()=>modal('<h3>Sign out?</h3><p class="mu" style="margin-top:0">You will need your password to sign in again.</p><div class="r"><button class="d" onclick="closeM();out()">Sign out</button><button class="p" onclick="closeM()">Stay signed in</button></div>');
 })();
 </script>
+
+<style id="v3css">
+/* ===== v3: dashboard Home, redesigned Results, polished Materials ===== */
+@keyframes dRing{from{stroke-dashoffset:var(--c)}}
+@keyframes dBar{from{transform:scaleX(0)}}
+.dash{display:flex;flex-direction:column;gap:var(--gap)}
+.dash .hero{margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--gap)}
+.stat{display:flex;align-items:center;gap:14px;text-align:left;width:100%;padding:18px;margin:0;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--tx);box-shadow:var(--sh);animation:mFadeUp .5s var(--ease) backwards}
+.stats>.stat:nth-child(2){animation-delay:.06s}.stats>.stat:nth-child(3){animation-delay:.12s}.stats>.stat:nth-child(4){animation-delay:.18s}
+.stat:hover{transform:translateY(-3px);border-color:var(--ac2)}
+.stat .si{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:15px;background:color-mix(in srgb,var(--ac2) 14%,var(--surface));color:var(--nv)}
+.stat.gold .si{background:var(--gold);color:#1a1400}
+.stat b{display:block;font:800 28px/1.05 var(--fd);letter-spacing:-.02em}
+.stat span{display:block;margin-top:3px;font-size:13px;color:var(--mu);font-weight:600}
+.stat small{font-weight:600;color:var(--mu);font-size:14px}
+.dcols{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+.dcols>.c,.dash>.c{margin:0}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 6px}
+.dh h3{margin:0}
+.dh button{min-height:34px;padding:6px 12px;font-size:13px}
+.ev{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--border)}
+.ev:first-of-type{border-top:0}
+.ev .dt{display:grid;place-items:center;flex:none;width:54px;height:58px;border-radius:14px;background:var(--surface-2);line-height:1.05;text-align:center}
+.ev .dt b{font:800 21px var(--fd);display:block;color:var(--nv)}
+.ev .dt span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)}
+.ev .em{flex:1;min-width:0}
+.ev .em b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev .em .mu{font-size:13px}
+.ev .when{flex:none;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--surface-2);color:var(--tx2)}
+.ev .when.soon{background:var(--gold);color:#1a1400}
+.al{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--border)}
+.al:first-of-type{border-top:0}
+.al i{flex:none;width:10px;height:10px;margin-top:6px;border-radius:50%;background:var(--border-2)}
+.al.new i{background:var(--gold);box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 25%,transparent)}
+.al b{display:block}
+.al .mu{font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.al time{display:block;font-size:12px;color:var(--mu);margin-top:2px}
+.empty{padding:18px 0 6px;text-align:center;color:var(--mu)}
+.rm{display:flex;align-items:center;gap:12px;padding:12px 0;border:0;border-top:1px solid var(--border);width:100%;text-align:left;background:none;border-radius:0;color:var(--tx);box-shadow:none;min-height:0}
+.rm:first-of-type{border-top:0}
+.rm:hover{transform:none;background:var(--hv)}
+.rm .mt-ic{flex:none}
+.rm b{flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+.rm .tag{flex:none;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mods .g{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.mods .tile{align-items:flex-start;text-align:left;padding:18px}
+@media(min-width:900px){.dcols{grid-template-columns:1.25fr 1fr}.dash .hero{min-height:240px}}
+@media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.stat{flex-direction:column;align-items:flex-start;padding:14px}.stat b{font-size:24px}}
+
+@keyframes mShim{to{background-position:-200% 0}}
+.sk{display:inline-block;min-width:3ch;border-radius:8px;color:transparent!important;background:linear-gradient(90deg,var(--surface-2) 30%,var(--hv) 50%,var(--surface-2) 70%);background-size:200% 100%;animation:mShim 1.3s linear infinite}
+.skl{height:46px;margin:10px 0;border-radius:12px;background:linear-gradient(90deg,var(--surface-2) 30%,var(--hv) 50%,var(--surface-2) 70%);background-size:200% 100%;animation:mShim 1.3s linear infinite}
+.skl.s{width:70%}
+#dal,#dev,#dmr{animation:mFadeIn .35s ease}
+/* results */
+.cg{display:grid;grid-template-columns:auto 1fr;gap:clamp(16px,3vw,36px);align-items:center;padding:clamp(20px,3vw,32px)!important;background:linear-gradient(135deg,#0b3d27,#0f5132 55%,#14714a)!important;color:#fff;border:0!important;overflow:hidden;position:relative}
+.cg::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:rgba(245,179,1,.22);pointer-events:none}
+.cg h3{color:#fff;margin:0 0 4px}
+.cg h3::before{display:none}
+.cg .mu,.cg .rank{color:rgba(255,255,255,.82)!important;text-align:left!important;justify-content:flex-start;margin:0 0 10px}
+.cg .rk{background:var(--gold);color:#1a1400;padding:3px 12px;border-radius:99px;font-weight:800}
+.ring{position:relative;width:clamp(120px,22vw,168px);aspect-ratio:1}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:11;stroke-linecap:round}
+.ring .tr{stroke:rgba(255,255,255,.16)}
+.ring .pr{stroke:var(--gold);stroke-dasharray:var(--c);stroke-dashoffset:var(--o);animation:dRing 1.3s .15s var(--ease) backwards}
+.ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring b{font:800 clamp(30px,5vw,42px)/1 var(--fd);letter-spacing:-.03em}
+.ring span{font-size:12px;opacity:.8;margin-top:2px}
+.dist{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-width:420px}
+.dist div{display:grid;grid-template-columns:22px 1fr 28px;align-items:center;gap:10px;font-size:13px;font-weight:700}
+.dist s{display:block;height:8px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;text-decoration:none}
+.dist s i{display:block;height:100%;width:var(--w);border-radius:99px;background:#fff;transform-origin:left;animation:dBar .9s .3s var(--ease) backwards}
+.rs-grid{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+.rs-grid>.c{margin:0}
+.rs-grid .c h3{display:flex;align-items:center;gap:10px}
+.rs-grid table{font-size:14px}
+.rs-grid th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mu)}
+.rs-grid td,.rs-grid th{padding:11px 8px}
+.rs-grid table{table-layout:fixed;width:100%}
+.rs-grid th:nth-child(1){width:23%}.rs-grid th:nth-child(3){width:13%}.rs-grid th:nth-child(4){width:14%}.rs-grid th:nth-child(5){width:16%}
+.rs-grid td{overflow-wrap:anywhere;white-space:normal}
+@media(max-width:560px){.rs-grid table{font-size:13px}.rs-grid td,.rs-grid th{padding:10px 6px}.rs-grid th:nth-child(1){width:26%}.rs-grid th:nth-child(3){width:14%}.rs-grid th:nth-child(4){width:15%}.rs-grid th:nth-child(5){width:17%}}
+.rs-grid .ov{overflow-x:auto}
+.sgp{display:inline-flex;align-items:center;gap:8px;margin-top:12px!important;padding:8px 14px;border-radius:99px;background:var(--surface-2);font-size:13.5px}
+@media(min-width:1180px){.rs-grid{grid-template-columns:1fr 1fr;align-items:start}}
+@media(max-width:560px){.cg{grid-template-columns:1fr;justify-items:center;text-align:center}.cg .mu,.cg .rank{text-align:center!important;justify-content:center}.dist{width:100%}}
+
+/* materials rows */
+.mt-ic{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:color-mix(in srgb,var(--ac2) 14%,var(--surface));color:var(--nv);font:800 11px var(--fb);letter-spacing:.04em;flex:none}
+.mt-ic.img{background:color-mix(in srgb,var(--gold) 28%,var(--surface));color:#6b4a00}
+.mg-b .row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px 14px;padding:16px 4px}
+.mg-b .row>.r{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+.mg-b .row>.r>*{flex:0 0 auto}
+.mg-b .row>.r button{white-space:nowrap}
+@media(max-width:640px){.mg-b .row>.r{flex-wrap:nowrap}.mg-b .row>.r>*{flex:1 1 0}.mg-b .row>.r button{width:100%;padding:9px 6px;font-size:13px}}
+@media(min-width:900px){.mg-b .row{grid-template-columns:auto minmax(0,1fr) auto}.mg-b .row>.r{grid-column:auto;justify-content:flex-end}}
+</style>
+<script id="v3">
+(function(){
+const safe=async(f,d)=>{try{return await f()}catch(e){return d}};
+const IC=(d,s)=>`<svg width="${s||22}" height="${s||22}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I={bell:IC('<path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 003.4 0"/>'),cal:IC('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'),doc:IC('<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M8 13h8M8 17h6"/>'),cap:IC('<path d="M22 10L12 5 2 10l10 5 10-5zM6 12v5c3 3 9 3 12 0v-5"/>'),rank:IC('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0zM17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3"/>')};
+const seen=()=>+(localStorage.getItem('seen'+me.id)||0);
+function cgpaOf(R,C){
+  const stamp=r=>r.session+(r.result_type=='CARRYOVER'?'1':'0')+(r.created_at||''),best={};
+  R.forEach(r=>{const o=best[r.course_code];if(!o||stamp(r)>stamp(o))best[r.course_code]=r});
+  let u=0,p=0;Object.values(best).forEach(r=>{const c=C[r.course_code];if(!c||c.credit_units==null)return;u+=+c.credit_units;p+=+c.credit_units*grade(+r.score)[1]});
+  return u?{g:p/u,u}:null;
+}
+const ringSvg=(v,mx)=>{const c=2*Math.PI*52,o=c*(1-Math.min(1,Math.max(0,v/mx)));return `<svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="52"/><circle class="pr" cx="60" cy="60" r="52" style="--c:${c.toFixed(1)};--o:${o.toFixed(1)}"/></svg>`};
+const when=d=>{const t=new Date(d),n=new Date(),a=new Date(t.getFullYear(),t.getMonth(),t.getDate()),b=new Date(n.getFullYear(),n.getMonth(),n.getDate()),k=Math.round((a-b)/864e5);return k<=0?['Today',1]:k==1?['Tomorrow',1]:k<7?['In '+k+' days',k<=3]:[t.toLocaleDateString(undefined,{day:'numeric',month:'short'}),0]};
+const ext=u=>/\.(jpe?g|png|webp|gif|bmp)(\?|#|$)/i.test(u||'')?['IMG','img']:['PDF',''];
+
+V.home=async function(){
+  const st=isSt(),now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const hr=now.getHours(),greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const g=(me.name||'').split(','),fn=((g[1]||g[0]||'').trim().split(' ')[0])||'there',ini=H((me.name||'?').trim()[0]||'?').toUpperCase();
+  const pk=(isAd()||isLec()?['rep','exam','res','mat','cal','dir']:['exam','res','mat','cal','dir']).filter(k=>NAV[me.role].includes(k)).slice(0,2);
+  const sk='<span class="sk">000</span>',skl='<div class="skl"></div><div class="skl"></div><div class="skl s"></div>';
+  const stat=(id,go2,ic,lab,cls)=>`<button class="stat ${cls||''}" id="st-${id}" onclick="go('${go2}')"><span class="si">${ic}</span><div><b id="sv-${id}">${sk}</b><span>${lab}</span></div></button>`;
+  const stats=(st?stat('cg','res',I.cap,'Your CGPA','gold')+stat('rk','res',I.rank,'Class rank'):'')+stat('al','nf',I.bell,'New alerts')+stat('up','cal',I.cal,'Coming up')+(st?'':stat('mt','mat',I.doc,'Course materials'));
+  // first paint: the whole layout appears at once, each panel fills in as its data arrives
+  v(`<div class="dash" id="dsh"><section class="hero"><div><span class="hchip">${RN[me.role]} portal</span><h2>${greet}, ${H(fn)}</h2><p>Your courses, materials, tests and results, all in one place.</p><div class="hbtn">${pk.map((k,i)=>`<button class="${i?'out':'gold'}" onclick="go('${k}')">${i?'':'Open '}${TI[k][1]}</button>`).join('')}</div></div><div class="hr"><div class="badge"><i>${ini}</i><div><b>${H(me.name)}</b><span>${RN[me.role]}${me.level?' · Level '+me.level:''}</span>${me.reg?`<span>${H(me.reg)}</span>`:''}</div></div><div class="hal" id="hal"><b>…</b> alerts</div></div></section>
+<div class="stats">${stats}</div>
+<div class="dcols"><div class="c"><div class="dh"><h3>Coming up</h3><button class="s" onclick="go('cal')">Calendar</button></div><div id="dev">${skl}</div></div><div class="c"><div class="dh"><h3>Latest alerts</h3><button class="s" onclick="go('nf')">See all</button></div><div id="dal">${skl}</div></div></div>
+<div class="c" id="dmt" hidden><div class="dh"><h3>New course materials</h3><button class="s" onclick="go('mat')">All materials</button></div><div id="dmr"></div></div>
+<div class="mods"><h3 class="sec" style="margin-top:8px">Your modules</h3><div class="g">${(window.NV||NAV[me.role]).slice(1).filter(k=>k!='tk').map(k=>`<button class="c tile" onclick="go('${k}')" style="margin:0"><div style="color:var(--ac)">${ico(k,24)}</div><div class="b" style="font-weight:700">${TI[k][1]}</div><div class="mu" style="font-size:12px">${TD[k]}</div></button>`).join('')}</div></div></div>`);
+  const alive=()=>tab==='home'&&document.getElementById('dsh'),put=(id,h)=>{const e=document.getElementById(id);if(e)e.innerHTML=h};
+  const none=(id,t)=>put(id,`<div class="empty">${t}</div>`);
+  const tasks=[];
+  tasks.push((async()=>{
+    let N;try{N=await myNotes()}catch(e){if(alive()){none('dal','Could not load alerts. Check your connection.');put('sv-al','—');put('hal','Alerts unavailable')}return}
+    if(!alive())return;
+    const nn=N.filter(x=>new Date(x.created_at)>seen()).length;
+    put('sv-al',String(nn));put('hal',`<b>${nn}</b> new ${nn==1?'alert':'alerts'}`);
+    const st2=document.getElementById('st-al');if(st2)st2.classList.toggle('gold',nn>0);
+    put('dal',N.length?N.slice(0,4).map(n=>`<div class="al ${new Date(n.created_at)>seen()?'new':''}"><i></i><div><b>${H(n.title||'Notice')}</b><div class="mu">${H(n.message||'')}</div><time>${fd(n.created_at)}</time></div></div>`).join(''):'<div class="empty">No alerts yet.</div>');
+  })());
+  tasks.push((async()=>{
+    let E;try{E=ok(await db.from('calendar_events').select('*').order('event_date'))}catch(e){if(alive()){none('dev','Could not load the calendar. Check your connection.');put('sv-up','—')}return}
+    if(!alive())return;
+    const up=E.filter(e=>(!st||!e.level||e.level==me.level)&&new Date(e.event_date)>=today).slice(0,4);
+    put('sv-up',String(up.length));
+    put('dev',up.length?up.map(e=>{const d=new Date(e.event_date),w=when(e.event_date);return`<div class="ev"><div class="dt"><b>${d.getDate()}</b><span>${d.toLocaleDateString(undefined,{month:'short'})}</span></div><div class="em"><b>${H(e.title)}</b><div class="mu">${H(e.event_type||'Event')}${e.level?' · '+e.level+'L':''} · ${d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</div></div><span class="when ${w[1]?'soon':''}">${w[0]}</span></div>`}).join(''):'<div class="empty">Nothing scheduled. You are all caught up.</div>');
+  })());
+  tasks.push((async()=>{
+    let M;try{M=ok(await db.from('course_materials').select('id,title,file_url,created_at,is_public,uploaded_by_id,courses(code)').order('created_at',{ascending:false}).limit(40))}catch(e){put('sv-mt','—');return}
+    if(!alive())return;
+    const mats=M.filter(m=>m.is_public||isLec()||isAd()||m.uploaded_by_id==me.id);
+    put('sv-mt',String(mats.length));
+    if(mats.length){put('dmr',mats.slice(0,4).map(m=>{const t=ext(m.file_url);return`<button class="rm" onclick="go('mat')"><span class="mt-ic ${t[1]}">${t[0]}</span><b>${H(m.title)}</b><span class="tag">${H(m.courses&&m.courses.code||'')}</span></button>`}).join(''));document.getElementById('dmt').hidden=false}
+  })());
+  if(st){
+    tasks.push((async()=>{
+      try{
+        const [RS,CR]=await Promise.all([db.from('student_results').select('*').eq('reg_num',me.reg).then(ok),db.from('courses').select('code,title,credit_units').then(ok)]);
+        if(!alive())return;const C={};CR.forEach(c=>C[c.code]=c);const cg=cgpaOf(RS,C);
+        put('sv-cg',cg?`${cg.g.toFixed(2)} <small>/ 5.00</small>`:'—');
+      }catch(e){put('sv-cg','—')}
+    })());
+    tasks.push((async()=>{
+      try{const RK=ok(await db.rpc('cgpa_ranking',{p_viewer:me.id}));if(!alive())return;const mine=(RK||[]).find(x=>x.reg_num==me.reg);put('sv-rk',mine?`${mine.rank} <small>of ${mine.total}</small>`:'—')}catch(e){put('sv-rk','—')}
+    })());
+  }
+  Promise.allSettled(tasks).then(()=>{if(alive())try{net(navigator.onLine&&!window.OFFSTALE?'':'off')}catch(e){}});
+};
+
+// Results (students): CGPA ring, grade spread, semester cards side by side
+const pr=V.res;
+V.res=async function(){
+  await pr.apply(this,arguments);
+  if(!isSt())return;
+  const cards=[...document.querySelectorAll('#v>.c')],cg=cards.find(c=>/Cumulative GPA/.test(c.textContent));
+  if(!cg||cg.classList.contains('cg'))return;
+  const big=cg.querySelector('.big'),val=parseFloat(big&&big.textContent)||0,sub=(cg.querySelector(':scope>.mu')||{}).textContent||'',rank=cg.querySelector('.rank');
+  const sem=cards.filter(c=>c!==cg&&c.querySelector('table'));
+  const cnt={A:0,B:0,C:0,D:0,E:0,F:0};
+  sem.forEach(c=>c.querySelectorAll('td .tag.ok,td .tag.er').forEach(t=>{const k=t.textContent.trim();if(k in cnt)cnt[k]++}));
+  const mx=Math.max(1,...Object.values(cnt)),tot=Object.values(cnt).reduce((a,b)=>a+b,0);
+  cg.className='c cg';
+  cg.innerHTML=`<div class="ring">${ringSvg(val,5)}<div><b>${val.toFixed(2)}</b><span>out of 5.00</span></div></div><div><h3>Cumulative GPA (CGPA)</h3><p class="mu">${H(sub)}</p>${rank?rank.outerHTML:''}${tot?`<div class="dist" aria-label="Grades across all results">${Object.keys(cnt).map(k=>`<div><span>${k}</span><s><i style="--w:${cnt[k]/mx*100}%"></i></s><span>${cnt[k]}</span></div>`).join('')}</div>`:''}</div>`;
+  if(sem.length){
+    const w=document.createElement('div');w.className='rs-grid';sem[0].before(w);
+    sem.forEach(c=>{const p=c.querySelector(':scope>p.mu');if(p)p.className='sgp';w.appendChild(c)});
+  }
+};
+
+// Materials: file-type badge on every row
+const pm=V.mat;
+V.mat=async function(){
+  await pm.apply(this,arguments);
+  document.querySelectorAll('#v .mg-b .row').forEach(r=>{
+    if(r.querySelector('.mt-ic'))return;
+    const a=r.querySelector('a[href]'),t=ext(a&&a.getAttribute('href'));
+    r.insertAdjacentHTML('afterbegin',`<span class="mt-ic ${t[1]}">${t[0]}</span>`);
+  });
+};
+})();
+</script>
+<script>R();</script>
 
 </body>
 </html>
