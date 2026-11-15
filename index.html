@@ -682,7 +682,7 @@ document.getElementById('md').addEventListener('click', e=>{ if(e.target.id==='m
 V.res=async function(){
   const C={};ok(await db.from('courses').select('code,title,credit_units')).forEach(c=>C[c.code]=c);
   window.CRS=C;
-  if(isSt()){v(transcript(ok(await db.from('student_results').select('*').eq('reg_num',me.reg)),C));return}
+  if(isSt()){v(transcript(ok(await db.from('student_results').select('*').eq('reg_num',me.reg)),C,me.reg));return}
   const y=new Date().getFullYear(),sess=[0,1,2,3,4,5].map(i=>`<option>${y-i}/${y-i+1}</option>`).join('');
   v(`<div class="c"><h3>Upload results</h3><p class="mu">Upload a <b>PDF, Word (.docx), Excel (.xlsx) or CSV</b> result sheet, or paste rows. It can list one course per row (<b>reg number, course code, score</b>) or one row per student with a column for each course. Only courses in your course list are read, and nothing is saved until you check the preview.</p><div class="g"><div><label>Session</label><select id="rs">${sess}</select></div><div><label>Semester</label><select id="rm"><option>First</option><option>Second</option></select></div><div><label>Sheet type</label><select id="rtp"><option value="REGULAR">Regular</option><option value="CARRYOVER">Carryover</option></select></div></div><p class="mu">Session, semester and carryover are read from the file heading when it has one. These boxes are used when it does not.</p><label>Result file</label><input id="rf" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt" onchange="rdFile(this)"><label>Or paste rows</label><textarea id="rt" rows="6" placeholder="2023/259021,CSC 301,68"></textarea><button class="p" onclick="prevRes()">Preview</button><div id="rv" style="margin-top:12px"></div></div><div class="c"><h3>Uploaded results</h3><div id="rsm" class="mu">Loading…</div></div><div class="c"><h3>Find a student</h3><label>Registration number or name</label><input id="rl" placeholder="2023/259021 or part of a name"><button onclick="lkRes()">Search</button></div><div id="rl2"></div>`);
   loadSum();
@@ -755,13 +755,22 @@ async function delU(t,id){
 
 // ===== Results, GPA and CGPA =====
 if(!NAV.ADMIN.includes('res'))NAV.ADMIN.splice(3,0,'res');
-function transcript(R,C){
-  if(!R.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
-  const reg=R[0].reg_num,calc=rows=>CGP.calc(rows,C,reg),all=calc(R),G={},att=CGP.attemptOf(R);window.CGTR={R,C,reg};
-  R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
-  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · every attempt counts, so a failed course stays in your CGPA when you retake it${all.skipped?` · ${all.skipped} result${all.skipped==1?'':'s'} left out (not in your course registration)`:''}</div></div>`+CGP.awaiting(R,C,reg)+Object.keys(G).sort().map(k=>{
-    const rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code)),t=calc(rows),[ses,sm]=k.split('|');
-    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0],nc=!CGP.counted(r,reg);return`<tr${nc?' style="opacity:.55"':''}><td>${H(r.course_code)}${nc?' <span class="tag er">not registered</span>':''}</td><td>${H(c.title||'—')}</td><td>${CGP.units(r,C,reg)??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
+function transcript(R,C,reg){
+  reg=reg||(R[0]&&R[0].reg_num);
+  const REGN=(window.REGC||{})[reg]||[];
+  if(!R.length&&!REGN.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
+  window.CGTR={R,C,reg};
+  const P=CGP.plan(R,C,reg),all=P.all,has=REGN.length>0;
+  const row=w=>{
+    const c=C[w.code]||{};
+    if(!w.r)return`<tr style="opacity:.6"><td>${H(w.code)}</td><td>${H(c.title||'—')}</td><td>${w.g&&w.g.units!=null?w.g.units:(c.credit_units??'—')}</td><td colspan="2" class="mu">No result yet</td></tr>`;
+    const g=grade(+w.r.score)[0];
+    return`<tr><td>${H(w.code)}</td><td>${H(c.title||'—')}</td><td>${w.units??'—'}</td><td>${w.r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`;
+  };
+  const note=has?'shown by your course registration, and every result of a registered course counts':'upload your course registration in Profile to show your results by it';
+  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · ${note}${all.skipped?` · ${all.skipped} result${all.skipped==1?'':'s'} left out (not on your registration)`:''}</div></div>`
+  +P.cards.map(cd=>`<div class="c"><h3>${H(cd.ses)} · ${cd.sm} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${cd.rows.map(row).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${cd.u?(cd.p/cd.u).toFixed(2):'0.00'}</b> · ${cd.u} units</p></div>`).join('')
+  +(P.excluded.length?`<div class="c"><h3>Not on your course registration</h3><div class="ov"><table><tr><th>Course</th><th>Session</th><th>Score</th><th>Grade</th></tr>${P.excluded.map(r=>`<tr style="opacity:.6"><td>${H(r.course_code)}</td><td>${H(r.session)}</td><td>${r.score}</td><td>${grade(+r.score)[0]}</td></tr>`).join('')}</table></div><p class="mu" style="margin:10px 0 0">These results are not counted. If a course is missing from your registration, upload the correct form in Profile.</p></div>`:'');
 }
 const LJ={};
 function loadJs(u){return LJ[u]||(LJ[u]=new Promise((res,rej)=>{const e=document.createElement('script');e.src=u;e.onload=res;e.onerror=()=>{delete LJ[u];rej(new Error('Could not load a helper library. Check your internet connection.'))};document.head.appendChild(e)}))}
@@ -905,7 +914,7 @@ async function lkRes(){
     if(REG.test(reg)){
       const[R,S]=await Promise.all([db.from('student_results').select('*').eq('reg_num',reg).then(ok),db.from('students').select('full_name,level').eq('reg_num',reg).limit(1).then(ok)]);
       const st=S[0];await CGP.load(reg);
-      o.innerHTML=`<div class="c"><h3>${st?H(st.full_name):'Not registered on the portal'}</h3><div class="mu">${H(reg)}${st?' · Level '+(st.level||'—'):''}</div></div>`+transcript(R,window.CRS);
+      o.innerHTML=`<div class="c"><h3>${st?H(st.full_name):'Not registered on the portal'}</h3><div class="mu">${H(reg)}${st?' · Level '+(st.level||'—'):''}</div></div>`+transcript(R,window.CRS,reg);
     }else{
       if(!/^[\w\s\/.\-]+$/.test(q)){o.innerHTML='<div class="c mu">Use letters, numbers or a reg number.</div>';return}
       const S=ok(await db.from('students').select('reg_num,full_name,level').or(`reg_num.ilike.%${q}%,full_name.ilike.%${q}%`).order('full_name').limit(15));
@@ -2853,56 +2862,72 @@ window.CGP={
     catch(e){try{REGC[reg]=ok(await q('course_code,session,semester'))}catch(e2){REGC[reg]=REGC[reg]||[]}}
     return REGC[reg];
   },
-  // a result counts unless the student has registered courses for that session and this course is not among them
-  counted(r,reg){
-    const REG=REGC[reg]||[];
-    if(!REG.some(x=>x.session==r.session))return true;
-    return REG.some(x=>x.session==r.session&&x.course_code==r.course_code);
-  },
-  // no replacing: a failed course and its carryover are both counted
-  units(r,C,reg){
+  units(r,C,reg,g){
     const c=C[r.course_code];if(c&&c.credit_units!=null)return+c.credit_units;
-    const g=(REGC[reg]||[]).find(x=>x.session==r.session&&x.course_code==r.course_code);
-    return g&&g.units!=null?+g.units:null;
+    if(g&&g.units!=null)return+g.units;
+    const x=(REGC[reg]||[]).find(x=>x.session==r.session&&x.course_code==r.course_code);
+    return x&&x.units!=null?+x.units:null;
   },
-  ord:n=>n+(n==1?'st':n==2?'nd':n==3?'rd':'th'),
-  // 1 = first sitting, 2 = first carryover, 3 = second carryover ...
-  attemptOf(R){
-    const A={};R.forEach(r=>(A[r.course_code]=A[r.course_code]||[]).push(r));
+  // Put every result under the course registration it belongs to.
+  //  1. a result goes under the registration of the same course in the same session (duplicates stay together)
+  //  2. a result whose session is not on the registration goes to that course's next unused registration
+  //  3. a session with no registration uploaded keeps its results as they are
+  //  4. a result for a course the student did not register is left out
+  assign(R,reg){
+    const REG=REGC[reg]||[],regSes=new Set(REG.map(x=>x.session)),byC={};
+    REG.forEach(x=>(byC[x.course_code]=byC[x.course_code]||[]).push(x));
+    Object.values(byC).forEach(a=>a.sort((p,q)=>p.session.localeCompare(q.session)));
     const key=r=>r.session+(r.semester=='First'?1:2)+(r.result_type=='CARRYOVER'?1:0)+(r.created_at||'');
-    Object.values(A).forEach(a=>a.sort((x,y)=>key(x).localeCompare(key(y))));
-    return r=>(A[r.course_code]||[]).indexOf(r)+1;
-  },
-  retaken(R,C){
-    const att=CGP.attemptOf(R),A={};R.forEach(r=>(A[r.course_code]=A[r.course_code]||[]).push(r));
-    const L=Object.keys(A).filter(k=>A[k].length>1).sort();
-    if(!L.length)return'';
-    return`<div class="c"><h3>Retaken courses</h3>${L.map(k=>`<div class="row"><div><b>${H(k)}</b>${C[k]?` <span class="mu">${H(C[k].title||'')}</span>`:''}<div class="mu">${A[k].slice().sort((a,b)=>att(a)-att(b)).map(r=>`${CGP.ord(att(r))}: ${r.score} (${grade(+r.score)[0]}) · ${H(r.session)}`).join('  →  ')}</div></div></div>`).join('')}<p class="mu" style="margin:10px 0 0">Every attempt is counted in your CGPA.</p></div>`;
+    const order=R.slice().sort((a,b)=>key(a).localeCompare(key(b))),place=new Map(),taken=new Set(),rest=[],excluded=[];
+    const defer=[];
+    order.forEach(r=>{
+      const g=(byC[r.course_code]||[]).find(x=>x.session==r.session);
+      if(!g)rest.push(r);
+      else if(taken.has(g)&&r.result_type=='CARRYOVER')defer.push([r,g]);   // a carryover goes to the course's next registration when there is one
+      else{place.set(r,g);taken.add(g)}
+    });
+    rest.forEach(r=>{
+      if(!regSes.has(r.session)){place.set(r,{session:r.session,semester:r.semester,fallback:true});return}
+      const g=(byC[r.course_code]||[]).find(x=>!taken.has(x));
+      if(g){place.set(r,g);taken.add(g)}else excluded.push(r);
+    });
+    defer.forEach(([r,g])=>{const h=(byC[r.course_code]||[]).find(x=>!taken.has(x));if(h){place.set(r,h);taken.add(h)}else place.set(r,g)});
+    return{place,excluded,order};
   },
   calc(R,C,reg){
-    let u=0,p=0,skipped=0;
-    R.forEach(r=>{
-      if(!CGP.counted(r,reg)){skipped++;return}
-      const n=CGP.units(r,C,reg);if(n==null)return;
-      u+=n;p+=n*grade(+r.score)[1];
+    const A=CGP.assign(R,reg);let u=0,p=0;
+    R.forEach(r=>{const g=A.place.get(r);if(!g)return;const n=CGP.units(r,C,reg,g);if(n==null)return;u+=n;p+=n*grade(+r.score)[1]});
+    return{g:u?p/u:0,u,skipped:A.excluded.length};
+  },
+  // semester cards built from the course registration, with each course's result(s)
+  plan(R,C,reg){
+    const A=CGP.assign(R,reg),REG=REGC[reg]||[],K={},ent=new Map();
+    const card=(ses,sm)=>{const k=ses+'|'+(sm=='First'?1:2);return K[k]=K[k]||{ses,sm:sm=='First'?'First':'Second',rows:[],u:0,p:0}};
+    REG.forEach(g=>{const e={code:g.course_code,r:null,g};ent.set(g,e);card(g.session,g.semester).rows.push(e)});
+    A.order.forEach(r=>{
+      const g=A.place.get(r);if(!g)return;
+      if(g.fallback){card(g.session,g.semester).rows.push({code:r.course_code,r,g});return}
+      const e=ent.get(g);if(!e.r)e.r=r;else card(g.session,g.semester).rows.push({code:r.course_code,r,g});
     });
-    return{g:u?p/u:0,u,skipped};
+    const cards=Object.keys(K).sort().map(k=>K[k]);
+    cards.forEach(cd=>{
+      cd.rows.sort((a,b)=>a.code.localeCompare(b.code));
+      cd.rows.forEach(w=>{if(!w.r)return;const n=CGP.units(w.r,C,reg,w.g);w.units=n;if(n!=null){cd.u+=n;cd.p+=n*grade(+w.r.score)[1]}});
+    });
+    return{cards,excluded:A.excluded,all:CGP.calc(R,C,reg)};
   },
   print(){
-    const T=window.CGTR;if(!T||!T.R.length){alert('There are no results to print yet.');return}
-    const{R,C,reg}=T,G={},att=CGP.attemptOf(R);
-    R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
-    const body=Object.keys(G).sort().map(k=>{
-      const[ses,sm]=k.split('|'),rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code));let u=0,p=0;
-      const tr=rows.map(r=>{
-        const c=C[r.course_code]||{},n=CGP.units(r,C,reg),g=grade(+r.score),on=CGP.counted(r,reg),pt=n!=null?n*g[1]:null;
-        if(on&&n!=null){u+=n;p+=pt}
-        return`<tr${on?'':' class="x"'}><td>${H(r.course_code)}${on?'':' (not registered, not counted)'}</td><td>${H(c.title||'')}</td><td>${n??''}</td><td>${r.score}</td><td>${g[0]}</td><td>${pt??''}</td></tr>`;
-      }).join('');
-      return`<h3>${H(ses)} session · ${sm==1?'First':'Second'} semester</h3><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th><th>Points</th></tr>${tr}</table><p class="s">Units ${u} · Total points ${p} · GPA ${u?(p/u).toFixed(2):'0.00'}</p>`;
-    }).join('');
-    const all=CGP.calc(R,C,reg),tp=Math.round(all.g*all.u);
-    const html=`<!doctype html><meta charset="utf-8"><title>Transcript ${H(reg)}</title><style>body{font:13px/1.45 Arial,sans-serif;color:#111;margin:24px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:2px 0 14px;font-weight:400}h3{font-size:14px;margin:18px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:4px 6px;text-align:left}th{background:#eee}tr.x td{color:#888}.s{margin:6px 0 0;font-weight:700}.tot{margin-top:20px;padding:10px;border:2px solid #111;font-size:15px}.n{margin-top:18px;font-size:11px;color:#555}</style><h1>University of Nigeria, Nsukka</h1><h2>Department of Computer and Robotics Education · Student transcript</h2><p><b>${H(me.name||'')}</b><br>Registration number: ${H(reg)}${me.level?'<br>Level: '+H(String(me.level)):''}<br>Printed: ${new Date().toLocaleDateString()}</p>${body}<div class="tot">Total units: <b>${all.u}</b> · Total points: <b>${tp}</b> · <b>CGPA: ${all.g.toFixed(2)}</b> / 5.00</div><p class="n">Every attempt counts, including failed courses and carryovers. Only courses in the student's course registration are counted where one was uploaded. This copy is generated from the portal and is not an official, signed transcript.</p>`;
+    const T=window.CGTR;if(!T){alert('There are no results to print yet.');return}
+    const{R,C,reg}=T,P=CGP.plan(R,C,reg);
+    if(!P.cards.length){alert('There are no results to print yet.');return}
+    const body=P.cards.map(cd=>`<h3>${H(cd.ses)} session · ${cd.sm} semester</h3><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th><th>Points</th></tr>${cd.rows.map(w=>{
+      const c=C[w.code]||{};
+      if(!w.r)return`<tr class="x"><td>${H(w.code)}</td><td>${H(c.title||'')}</td><td>${w.g&&w.g.units!=null?w.g.units:(c.credit_units??'')}</td><td colspan="3">No result yet</td></tr>`;
+      const g=grade(+w.r.score);
+      return`<tr><td>${H(w.code)}</td><td>${H(c.title||'')}</td><td>${w.units??''}</td><td>${w.r.score}</td><td>${g[0]}</td><td>${w.units!=null?w.units*g[1]:''}</td></tr>`;
+    }).join('')}</table><p class="s">Units ${cd.u} · Total points ${cd.p} · GPA ${cd.u?(cd.p/cd.u).toFixed(2):'0.00'}</p>`).join('');
+    const all=P.all,tp=Math.round(all.g*all.u);
+    const html=`<!doctype html><meta charset="utf-8"><title>Transcript ${H(reg)}</title><style>body{font:13px/1.45 Arial,sans-serif;color:#111;margin:24px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:2px 0 14px;font-weight:400}h3{font-size:14px;margin:18px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:4px 6px;text-align:left}th{background:#eee}tr.x td{color:#888}.s{margin:6px 0 0;font-weight:700}.tot{margin-top:20px;padding:10px;border:2px solid #111;font-size:15px}.n{margin-top:18px;font-size:11px;color:#555}</style><h1>University of Nigeria, Nsukka</h1><h2>Department of Computer and Robotics Education · Student transcript</h2><p><b>${H(me.name||'')}</b><br>Registration number: ${H(reg)}${me.level?'<br>Level: '+H(String(me.level)):''}<br>Printed: ${new Date().toLocaleDateString()}</p>${body}<div class="tot">Total units: <b>${all.u}</b> · Total points: <b>${tp}</b> · <b>CGPA: ${all.g.toFixed(2)}</b> / 5.00</div><p class="n">Results are listed by the student's course registration. A course taken more than once appears under each registration with its own score, and every score counts. This copy is generated from the portal and is not an official, signed transcript.</p>`;
     const w=window.open('','_blank');if(!w){alert('Allow pop-ups to print your transcript.');return}
     w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),300);
   },
