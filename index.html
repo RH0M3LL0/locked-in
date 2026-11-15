@@ -851,7 +851,7 @@ async function prevRes(){
   setSel('#rs',first.session);setSel('#rm',fs.semester);setSel('#rtp',ft.result_type);
   const dS=$('#rs').value,dM=$('#rm').value,dT=$('#rtp').value;
   rows.forEach(r=>{r.session=r.session||dS;r.semester=r.semester||dM;r.result_type=r.result_type||dT});
-  const M=new Map();rows.forEach(r=>M.set([r.reg_num,r.course_code,r.session].join('|'),r));
+  const M=new Map();rows.forEach(r=>M.set([r.reg_num,r.course_code,r.session,r.result_type].join('|'),r));
   const R=[...M.values()];window.RES_ROWS=R;
   if(!R.length){x.innerHTML='<span style="color:var(--er)">No results found. Each row needs a reg number like 2023/259021 and course codes that exist in your course list.</span>'+(issues.length?'<div class="mu">'+issues.slice(0,5).map(H).join('<br>')+'</div>':'')+unkHtml+read;return}
   const regs=[...new Set(R.map(r=>r.reg_num))],N={},G={};
@@ -864,12 +864,21 @@ async function saveRes(){
   const x=$('#rx'),sv=id=>{const e=$(id);return e?e.value:null},U=(window.RES_ROWS||[]).map(r=>({...r,session:r.session||sv('#rs'),semester:r.semester||sv('#rm'),result_type:r.result_type||sv('#rtp')||'REGULAR'}));
   if(!U.length)return;x.textContent='Saving…';
   try{
-    for(let i=0;i<U.length;i+=300)ok(await db.from('student_results').upsert(U.slice(i,i+300),{onConflict:'reg_num,course_code,session'}));
+    for(let i=0;i<U.length;i+=300)ok(await db.from('student_results').upsert(U.slice(i,i+300),{onConflict:'reg_num,course_code,session,result_type'}));
     const G=[...new Set(U.map(r=>r.session+' '+r.semester+' semester'))];
-    x.innerHTML=`<span style="color:var(--gr)">Saved ${U.length} results (${G.map(H).join(', ')}).</span>`;
+    // check the saved results against each student's course registration
+    let note='';
+    try{
+      const regs=[...new Set(U.map(r=>r.reg_num))],ses=[...new Set(U.map(r=>r.session))],REG=[];
+      for(let i=0;i<regs.length;i+=150)REG.push(...ok(await db.from('course_registrations').select('reg_num,course_code,session').in('reg_num',regs.slice(i,i+150)).in('session',ses).range(0,9999)));
+      const has=new Set(REG.map(r=>r.reg_num+'|'+r.session)),got=new Set(REG.map(r=>r.reg_num+'|'+r.session+'|'+r.course_code));
+      const withReg=new Set(U.filter(r=>has.has(r.reg_num+'|'+r.session)).map(r=>r.reg_num)),off=U.filter(r=>has.has(r.reg_num+'|'+r.session)&&!got.has(r.reg_num+'|'+r.session+'|'+r.course_code)).length;
+      note=`<div class="mu" style="margin-top:6px">${withReg.size} of ${regs.length} students have a course registration for this session. ${off?`<b>${off} result${off==1?' is':'s are'}</b> for courses those students did not register: saved, but not counted in their CGPA. `:'Every result matches a registered course. '}${regs.length-withReg.size?`The other ${regs.length-withReg.size} have none uploaded, so all their results count.`:''}</div>`;
+    }catch(e){}
+    x.innerHTML=`<span style="color:var(--gr)">Saved ${U.length} results (${G.map(H).join(', ')}).</span>${note}`;
     notify([{target_role:'STUDENT',title:'Results uploaded',message:`${G.join(', ')} results are available.`,link_url:'/results'}]);
     loadSum();
-  }catch(e){x.textContent=e.message}
+  }catch(e){x.textContent=/ON CONFLICT|unique or exclusion/i.test(e.message||'')?'The results table still treats a carryover as the same result as the original. Run results_keep_all_attempts.sql in Supabase, then save again.':e.message}
 }
 async function loadSum(){
   const o=$('#rsm');if(!o)return;
@@ -1644,16 +1653,16 @@ window.editR=async function(i){
   const r=window.MGR[i],s=parseFloat($('#ms'+i).value);
   if(!(s>=0&&s<=100)){alert('Score must be between 0 and 100.');return}
   try{
-    chg(ok(await db.from('student_results').update({score:s}).eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).select('reg_num')));
+    chg(ok(await db.from('student_results').update({score:s}).eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).eq('result_type',r.result_type||'REGULAR').select('reg_num')));
     await lkRes();
   }catch(e){alert(e.message)}
 };
 
 window.delR=async function(i){
   const r=window.MGR[i];
-  if(!confirm('Delete '+r.course_code+' ('+r.session+') for '+r.reg_num+'?'))return;
+  if(!confirm('Delete '+r.course_code+' ('+r.session+(r.result_type=='CARRYOVER'?', carryover':'')+') for '+r.reg_num+'?'))return;
   try{
-    chg(ok(await db.from('student_results').delete().eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).select('reg_num')));
+    chg(ok(await db.from('student_results').delete().eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).eq('result_type',r.result_type||'REGULAR').select('reg_num')));
     await lkRes();
   }catch(e){alert(e.message)}
 };
