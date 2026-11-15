@@ -757,11 +757,11 @@ async function delU(t,id){
 if(!NAV.ADMIN.includes('res'))NAV.ADMIN.splice(3,0,'res');
 function transcript(R,C){
   if(!R.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
-  const reg=R[0].reg_num,calc=rows=>CGP.calc(rows,C,reg),all=calc(R),G={};
+  const reg=R[0].reg_num,calc=rows=>CGP.calc(rows,C,reg),all=calc(R),G={};window.CGTR={R,C,reg};
   R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
   return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · every attempt counts, so a failed course stays in your CGPA when you retake it${all.skipped?` · ${all.skipped} result${all.skipped==1?'':'s'} left out (not in your course registration)`:''}</div></div>`+CGP.awaiting(R,C,reg)+Object.keys(G).sort().map(k=>{
     const rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code)),t=calc(rows),[ses,sm]=k.split('|');
-    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0],nc=!CGP.counted(r,reg);return`<tr${nc?' style="opacity:.55"':''}><td>${H(r.course_code)}${r.result_type=='CARRYOVER'?' <span class="tag">carryover</span>':''}${nc?' <span class="tag er">not registered</span>':''}</td><td>${H(c.title||'—')}</td><td>${c.credit_units??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
+    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0],nc=!CGP.counted(r,reg);return`<tr${nc?' style="opacity:.55"':''}><td>${H(r.course_code)}${r.result_type=='CARRYOVER'?' <span class="tag">carryover</span>':''}${nc?' <span class="tag er">not registered</span>':''}</td><td>${H(c.title||'—')}</td><td>${CGP.units(r,C,reg)??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
 }
 const LJ={};
 function loadJs(u){return LJ[u]||(LJ[u]=new Promise((res,rej)=>{const e=document.createElement('script');e.src=u;e.onload=res;e.onerror=()=>{delete LJ[u];rej(new Error('Could not load a helper library. Check your internet connection.'))};document.head.appendChild(e)}))}
@@ -2832,8 +2832,9 @@ window.REGC=window.REGC||{};
 window.CGP={
   async load(reg){
     if(!reg)return[];
-    try{REGC[reg]=ok(await db.from('course_registrations').select('course_code,session,semester').eq('reg_num',reg).range(0,4999))}
-    catch(e){REGC[reg]=REGC[reg]||[]}
+    const q=cols=>db.from('course_registrations').select(cols).eq('reg_num',reg).range(0,4999);
+    try{REGC[reg]=ok(await q('course_code,session,semester,units'))}
+    catch(e){try{REGC[reg]=ok(await q('course_code,session,semester'))}catch(e2){REGC[reg]=REGC[reg]||[]}}
     return REGC[reg];
   },
   // a result counts unless the student has registered courses for that session and this course is not among them
@@ -2843,14 +2844,37 @@ window.CGP={
     return REG.some(x=>x.session==r.session&&x.course_code==r.course_code);
   },
   // no replacing: a failed course and its carryover are both counted
+  units(r,C,reg){
+    const c=C[r.course_code];if(c&&c.credit_units!=null)return+c.credit_units;
+    const g=(REGC[reg]||[]).find(x=>x.session==r.session&&x.course_code==r.course_code);
+    return g&&g.units!=null?+g.units:null;
+  },
   calc(R,C,reg){
     let u=0,p=0,skipped=0;
     R.forEach(r=>{
       if(!CGP.counted(r,reg)){skipped++;return}
-      const c=C[r.course_code];if(!c||c.credit_units==null)return;
-      u+=+c.credit_units;p+=+c.credit_units*grade(+r.score)[1];
+      const n=CGP.units(r,C,reg);if(n==null)return;
+      u+=n;p+=n*grade(+r.score)[1];
     });
     return{g:u?p/u:0,u,skipped};
+  },
+  print(){
+    const T=window.CGTR;if(!T||!T.R.length){alert('There are no results to print yet.');return}
+    const{R,C,reg}=T,G={};
+    R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
+    const body=Object.keys(G).sort().map(k=>{
+      const[ses,sm]=k.split('|'),rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code));let u=0,p=0;
+      const tr=rows.map(r=>{
+        const c=C[r.course_code]||{},n=CGP.units(r,C,reg),g=grade(+r.score),on=CGP.counted(r,reg),pt=n!=null?n*g[1]:null;
+        if(on&&n!=null){u+=n;p+=pt}
+        return`<tr${on?'':' class="x"'}><td>${H(r.course_code)}${r.result_type=='CARRYOVER'?' (carryover)':''}${on?'':' (not registered, not counted)'}</td><td>${H(c.title||'')}</td><td>${n??''}</td><td>${r.score}</td><td>${g[0]}</td><td>${pt??''}</td></tr>`;
+      }).join('');
+      return`<h3>${H(ses)} session · ${sm==1?'First':'Second'} semester</h3><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th><th>Points</th></tr>${tr}</table><p class="s">Units ${u} · Total points ${p} · GPA ${u?(p/u).toFixed(2):'0.00'}</p>`;
+    }).join('');
+    const all=CGP.calc(R,C,reg),tp=Math.round(all.g*all.u);
+    const html=`<!doctype html><meta charset="utf-8"><title>Transcript ${H(reg)}</title><style>body{font:13px/1.45 Arial,sans-serif;color:#111;margin:24px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:2px 0 14px;font-weight:400}h3{font-size:14px;margin:18px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:4px 6px;text-align:left}th{background:#eee}tr.x td{color:#888}.s{margin:6px 0 0;font-weight:700}.tot{margin-top:20px;padding:10px;border:2px solid #111;font-size:15px}.n{margin-top:18px;font-size:11px;color:#555}</style><h1>University of Nigeria, Nsukka</h1><h2>Department of Computer and Robotics Education · Student transcript</h2><p><b>${H(me.name||'')}</b><br>Registration number: ${H(reg)}${me.level?'<br>Level: '+H(String(me.level)):''}<br>Printed: ${new Date().toLocaleDateString()}</p>${body}<div class="tot">Total units: <b>${all.u}</b> · Total points: <b>${tp}</b> · <b>CGPA: ${all.g.toFixed(2)}</b> / 5.00</div><p class="n">Every attempt counts, including failed courses and carryovers. Only courses in the student's course registration are counted where one was uploaded. This copy is generated from the portal and is not an official, signed transcript.</p>`;
+    const w=window.open('','_blank');if(!w){alert('Allow pop-ups to print your transcript.');return}
+    w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),300);
   },
   awaiting(R,C,reg){
     const REG=REGC[reg]||[],have=new Set(R.map(r=>r.session+'|'+r.course_code));
@@ -2867,91 +2891,125 @@ function resolve(c,C){
   return null;
 }
 function cgParse(lines,C){
-  const codeRe=/\b(?:UNN[-\s]?)?([A-Za-z]{3})\s*-?\s*(\d{3}[A-Za-z]?)\b/g;
-  const ctx={session:null,semester:null},found=new Map(),unknown=new Set(),regs=new Set();
+  const codeRe=/\b(?:UNN[-\s]?)?([A-Za-z]{3})\s*-?\s*(\d{3}[A-Za-z]?)\b/,codeAll=new RegExp(codeRe.source,'g');
+  const ctx={session:null},sems=new Set(),found=new Map(),unknown=new Set(),unapproved=[],regs=new Set();
+  let sem=null,total=null,sect=false;
+  const structured=lines.some(l=>/^\s*REGISTERED COURSES\b/i.test(String(l)));   // the portal's course form
   lines.forEach(ln=>{
     const t=String(ln).replace(/\s+/g,' ').trim();if(!t)return;
     const rm=REGN.exec(t);if(rm)regs.add(rm[1]+'/'+rm[2]);
     const sm=SES.exec(t);if(sm&&+sm[2]==+sm[1]+1&&!ctx.session)ctx.session=sm[1]+'/'+sm[2];
-    if(/\b(first|1st|harmattan)\s+semester\b|\bsemester\s*[:\-]?\s*(first|1st|1|one)\b/i.test(t))ctx.semester='First';
-    else if(/\b(second|2nd|rain)\s+semester\b|\bsemester\s*[:\-]?\s*(second|2nd|2|two)\b/i.test(t))ctx.semester='Second';
-    let m;codeRe.lastIndex=0;
-    while((m=codeRe.exec(t))){
+    if(/\b(first|1st|harmattan)\s+semester\b|\bsemester\s*[:\-]?\s*(first|1st|1|one)\b/i.test(t)){sem='First';sems.add(sem)}
+    else if(/\b(second|2nd|rain)\s+semester\b|\bsemester\s*[:\-]?\s*(second|2nd|2|two)\b/i.test(t)){sem='Second';sems.add(sem)}
+    if(structured){
+      if(/^REGISTERED COURSES\b/i.test(t)){sect=true;return}
+      if(sect&&/^TOTAL\b/i.test(t)){const n=t.match(/TOTAL\s+(\d+)/i);if(n)total=+n[1];sect=false;return}
+      if(!sect)return;
+      const m=t.match(codeRe);if(!m)return;
+      const raw=(m[1]+' '+m[2]).toUpperCase(),u=t.slice(m.index+m[0].length).match(/(\d{1,2})\s+[A-Za-z]+\s+(True|False)\b/i);
+      if(u&&/false/i.test(u[2])){unapproved.push(raw);return}
+      const c=resolve(raw,C)||(u?raw:null);
+      if(!c){unknown.add(raw);return}
+      if(!found.has(c))found.set(c,{sem,units:u?+u[1]:null});
+      return;
+    }
+    let m;codeAll.lastIndex=0;
+    while((m=codeAll.exec(t))){
       const raw=(m[1]+' '+m[2]).toUpperCase(),c=resolve(raw,C);
-      if(c){if(!found.has(c))found.set(c,ctx.semester)}else unknown.add(raw);
+      if(c){if(!found.has(c))found.set(c,{sem,units:null})}else unknown.add(raw);
     }
   });
-  return{session:ctx.session,found,unknown:[...unknown],regs};
+  return{session:ctx.session,semester:sems.size==1?[...sems][0]:null,found,unknown:[...unknown],unapproved,total,regs};
 }
 
 const prevRes=V.res;
 V.res=async function(){
   if(isSt())await CGP.load(me.reg);
   await prevRes.apply(this,arguments);
-  if(isSt())await cgCard();
+  if(isSt()){
+    const n=(REGC[me.reg]||[]).length;
+    $('#v').insertAdjacentHTML('beforeend',`<div class="c"><h3>Course registration</h3><p class="mu" style="margin-top:0">${n?`${n} registered courses saved. Your CGPA counts only the courses you registered, and every attempt counts.`:'You have not uploaded a course registration. Until you do, all your results count.'}</p><div class="r"><button class="s" onclick="go('prof')">Manage in Profile</button><button class="s" onclick="CGP.print()">Print / save transcript as PDF</button></div></div>`);
+  }
 };
 
-async function cgCard(){
-  const y=new Date().getFullYear(),sess=[0,1,2,3,4,5,6,7].map(i=>`<option>${y-i}/${y-i+1}</option>`).join('');
-  $('#v').insertAdjacentHTML('beforeend',`<div class="c" id="crc"><h3>My course registration</h3><p class="mu" style="margin-top:0">Upload your course registration form (<b>PDF, Word, Excel or CSV</b>) or paste your course codes. Your CGPA then counts only the courses you registered. Every attempt counts, so a failed course stays in your CGPA when you retake it. Nothing is saved until you check the preview.</p><div class="g"><div><label>Session</label><select id="cgs">${sess}</select></div><div><label>Semester</label><select id="cgm"><option>First</option><option>Second</option></select></div></div><p class="mu">Session and semester are read from the form when it shows them. These boxes are used when it does not.</p><label>Course registration file</label><input id="cgf" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt" onchange="cgRead(this)"><label>Or paste course codes</label><textarea id="cgt" rows="4" placeholder="CRE 301, CRE 305, VTE 321"></textarea><button class="p" onclick="cgPrev()">Preview</button><div id="cgv" style="margin-top:12px"></div><h3 style="margin-top:18px">Saved registrations</h3><div id="cgl" class="mu">Loading…</div></div>`);
-  cgList();
+// ---- Profile: upload / remove the course registration PDF for each session and semester ----
+const SEMS=['First','Second'];
+async function loadFiles(reg){
+  try{return ok(await db.from('course_registration_files').select('*').eq('reg_num',reg))}catch(e){return[]}
 }
-
-window.cgRead=async function(i){
-  const f=i.files[0],x=$('#cgv');if(!f)return;
-  x.innerHTML='<span class="mu">Reading '+H(f.name)+'…</span>';
-  try{
-    const ext=(f.name.split('.').pop()||'').toLowerCase();let lines;
-    if(ext=='pdf')lines=await pdfLines(await f.arrayBuffer());
-    else if(ext=='docx')lines=await docxLines(await f.arrayBuffer());
-    else if(ext=='xlsx')lines=await xlsxLines(await f.arrayBuffer());
-    else if(ext=='csv'||ext=='txt')lines=(await f.text()).split(/\r?\n/);
-    else{x.innerHTML='<span style="color:var(--er)">Use a PDF, DOCX, XLSX or CSV file.</span>';return}
-    if(!lines.some(l=>String(l).trim())){x.innerHTML='<span style="color:var(--er)">No readable text found. If this PDF is a scanned picture, save the form as a PDF from the school portal, or paste your course codes below.</span>';return}
-    $('#cgt').value=lines.join('\n');cgPrev();
-  }catch(e){x.innerHTML='<span style="color:var(--er)">'+H(e.message)+'</span>'}
+const pp=V.prof;
+V.prof=async function(){
+  await pp.apply(this,arguments);
+  if(me.reg&&me.role!='LECTURER')await cgProf();
 };
+async function cgProf(){
+  const C={};try{ok(await db.from('courses').select('code,title,credit_units')).forEach(c=>C[c.code]=c);window.CRS=C}catch(e){}
+  const[REG,F]=await Promise.all([CGP.load(me.reg),loadFiles(me.reg)]);
+  window.CGFILES=F;
+  const y=new Date().getFullYear(),S=new Set([0,1,2,3,4,5,6,7].map(i=>`${y-i}/${y-i+1}`));
+  REG.forEach(r=>S.add(r.session));F.forEach(r=>S.add(r.session));
+  const list=[...S].sort().reverse();
+  const slot=(ses,sem)=>{
+    const f=F.find(x=>x.session==ses&&x.semester==sem),n=REG.filter(x=>x.session==ses&&x.semester==sem).length,id=ses.replace('/','-')+'-'+sem;
+    const has=f||n;
+    return`<div class="row"><div><b>${sem=='First'?'1st':'2nd'} semester</b><div class="mu">${has?`<span class="tag ok">Uploaded</span> ${n} course${n==1?'':'s'}${f?` · <a href="${H(f.file_url)}" target="_blank" rel="noopener">View PDF</a>`:''}`:'Not uploaded'}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s" onclick="document.getElementById('cgi-${id}').click()">${has?'Replace':'Upload PDF'}</button>${has?`<button class="s d" onclick="cgRemove('${H(ses)}','${sem}')">Remove</button>`:''}<input id="cgi-${id}" type="file" accept="application/pdf,.pdf" hidden onchange="cgPick(this,'${H(ses)}','${sem}')"></div></div>`;
+  };
+  $('#v').insertAdjacentHTML('beforeend',`<div class="c" id="crc"><h3>Course registration</h3><p class="mu" style="margin-top:0">Upload your course registration form as a <b>PDF</b> for each semester of each session. Your CGPA then counts only the courses you registered, and every attempt counts, so a failed course stays in your CGPA when you retake it. Carryover courses should be on the form of the session you registered them in.</p>${list.map((ses,i)=>`<details ${i==0||REG.some(r=>r.session==ses)?'open':''} style="margin-top:8px"><summary style="cursor:pointer;font-weight:700;padding:6px 0">${H(ses)} session</summary>${SEMS.map(m=>slot(ses,m)).join('')}</details>`).join('')}<div id="cgm" class="mu" role="status" style="min-height:20px;margin-top:8px"></div></div>`);
+}
+const say=(t,bad)=>{const m=$('#cgm');if(m){m.textContent=t;m.style.color=bad?'var(--er)':''}};
 
-window.cgPrev=function(){
-  const x=$('#cgv'),txt=$('#cgt').value;
-  if(!txt.trim()){x.innerHTML='<span class="mu">Choose a file or paste your course codes first.</span>';return}
-  const C=window.CRS||{},P=cgParse(txt.split(/\r?\n/),C);
-  if(P.regs.size&&!P.regs.has(me.reg)){x.innerHTML=`<span style="color:var(--er)">This form is for ${H([...P.regs].join(', '))}, not for your registration number (${H(me.reg)}). It was not read.</span>`;window.CGPEND=null;return}
-  const dS=$('#cgs').value,dM=$('#cgm').value,session=P.session||dS;
-  if(P.session){const sel=$('#cgs');if(![...sel.options].some(o=>o.value==P.session))sel.insertAdjacentHTML('afterbegin',`<option>${P.session}</option>`);sel.value=P.session}
-  const rows=[...P.found].map(([code,sem])=>({code,sem:sem||dM}));
-  window.CGPEND={session,rows};
-  if(!rows.length){x.innerHTML=`<span style="color:var(--er)">No courses from the course list were found.</span>${P.unknown.length?`<div class="mu" style="margin-top:6px">Not recognised: ${P.unknown.slice(0,15).map(H).join(', ')}</div>`:''}`;return}
-  const units=rows.reduce((a,r)=>a+(+(C[r.code]||{}).credit_units||0),0);
-  x.innerHTML=`<div class="r" style="margin-bottom:8px"><span class="tag ok">${rows.length} courses</span><span class="tag">${H(session)}</span><span class="tag">${units} units</span>${P.unknown.length?`<span class="tag er">${P.unknown.length} not recognised</span>`:''}</div><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Semester</th></tr>${rows.map(r=>{const c=C[r.code]||{};return`<tr><td>${H(r.code)}</td><td>${H(c.title||'—')}</td><td>${c.credit_units??'—'}</td><td>${r.sem}</td></tr>`}).join('')}</table></div>${P.unknown.length?`<div class="mu" style="margin-top:8px">Not in the course list, so skipped: ${P.unknown.slice(0,15).map(H).join(', ')}</div>`:''}<button class="p" style="margin-top:10px" onclick="cgSave()">Save ${rows.length} courses</button><div id="cgx" class="mu" style="margin-top:8px"></div>`;
+window.cgPick=async function(inp,ses,sem){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  if(f.type!='application/pdf'&&!/\.pdf$/i.test(f.name))return say('Choose a PDF file.',1);
+  if(f.size>10e6)return say('The file is over 10 MB.',1);
+  say('Reading '+f.name+'…');
+  try{
+    const lines=await pdfLines(await f.arrayBuffer());
+    if(!lines.some(l=>String(l).trim()))return say('No readable text found. Use the PDF saved from the school portal, not a photo or scan.',1);
+    const C=window.CRS||{},P=cgParse(lines,C);
+    if(P.regs.size&&!P.regs.has(me.reg))return say('This form is for '+[...P.regs].join(', ')+', not your registration number ('+me.reg+').',1);
+    if(P.session&&P.session!=ses)return say('This form is for the '+P.session+' session, not '+ses+'. Upload it under the right session.',1);
+    if(P.semester&&P.semester!=sem)return say('This form is for the '+P.semester+' semester, not the '+sem+' semester. Upload it under the right semester.',1);
+    const rows=[...P.found].filter(([c,o])=>!o.sem||o.sem==sem).map(([c,o])=>({code:c,units:o.units!=null?o.units:((C[c]||{}).credit_units!=null?+C[c].credit_units:null)}));
+    if(!rows.length)return say('No registered courses were found in this PDF.'+(P.unknown.length?' Not recognised: '+P.unknown.slice(0,10).join(', ')+'.':''),1);
+    window.CGP_PEND={f,ses,sem,rows};
+    const units=rows.reduce((a,r)=>a+(r.units||0),0),bad=rows.some(r=>r.units==null)||(P.total!=null&&P.total!=units);
+    say('');
+    modal(`<h3>${H(ses)} · ${sem=='First'?'1st':'2nd'} semester</h3><div class="r" style="margin-bottom:8px"><span class="tag ok">${rows.length} courses</span><span class="tag">${units} units</span>${P.total!=null?`<span class="tag ${P.total==units?'ok':'er'}">Form total ${P.total}</span>`:''}${P.unapproved.length?`<span class="tag er">${P.unapproved.length} not approved</span>`:''}</div><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th></tr>${rows.map(r=>`<tr><td>${H(r.code)}</td><td>${H((C[r.code]||{}).title||'—')}</td><td>${r.units??'—'}</td></tr>`).join('')}</table></div>${bad?'<p class="mu" style="color:var(--er)">The units do not match the total on the form. Check the list before saving.</p>':''}${P.unapproved.length?`<p class="mu">Not approved on the form, so left out: ${P.unapproved.map(H).join(', ')}</p>`:''}${P.unknown.length?`<p class="mu">Not recognised, so skipped: ${P.unknown.slice(0,15).map(H).join(', ')}</p>`:''}<p class="mu">Saving replaces anything already saved for this semester.</p><div id="cgs2" class="mu" style="min-height:20px"></div><div class="r"><button class="p" id="cgb" onclick="cgSave()">Save</button><button onclick="closeM()">Cancel</button></div>`);
+  }catch(e){say(e.message,1)}
 };
 
 window.cgSave=async function(){
-  const P=window.CGPEND,x=$('#cgx');if(!P||!P.rows.length)return;
-  x.textContent='Saving…';
+  const P=window.CGP_PEND,m=$('#cgs2'),b=$('#cgb');if(!P)return;
+  b.disabled=true;m.textContent='Saving…';
+  const reg=me.reg,tag=x=>x.replace(/\//g,'-'),path=`coursereg/${tag(reg)}/${tag(P.ses)}_${P.sem}_${Date.now()}.pdf`;
   try{
-    const rows=P.rows.map(r=>({reg_num:me.reg,course_code:r.code,session:P.session,semester:r.sem}));
-    ok(await db.from('course_registrations').upsert(rows,{onConflict:'reg_num,course_code,session'}));
-    window.CGPEND=null;go('res');
-  }catch(e){x.innerHTML='<span style="color:var(--er)">'+H(/course_registrations/.test(e.message)?'The course registration table has not been set up yet. Run course_registration_setup.sql in Supabase first.':e.message)+'</span>'}
+    const old=(await loadFiles(reg)).find(x=>x.session==P.ses&&x.semester==P.sem);
+    const up=await db.storage.from('materials').upload(path,P.f,{contentType:'application/pdf'});
+    if(up.error)throw up.error;
+    const url=db.storage.from('materials').getPublicUrl(path).data.publicUrl;
+    try{
+      ok(await db.from('course_registration_files').upsert({reg_num:reg,session:P.ses,semester:P.sem,file_url:url,file_path:path,file_name:P.f.name},{onConflict:'reg_num,session,semester'}));
+      ok(await db.from('course_registrations').delete().eq('reg_num',reg).eq('session',P.ses).eq('semester',P.sem));
+      const ins=withU=>db.from('course_registrations').insert(P.rows.map(r=>{const o={reg_num:reg,course_code:r.code,session:P.ses,semester:P.sem};if(withU&&r.units!=null)o.units=r.units;return o}));
+      try{ok(await ins(true))}catch(e){if(/units/i.test(e.message||''))ok(await ins(false));else throw e}
+    }catch(e){try{await db.storage.from('materials').remove([path])}catch(x){}throw e}
+    if(old&&old.file_path&&old.file_path!=path){try{await db.storage.from('materials').remove([old.file_path])}catch(e){}}
+    window.CGP_PEND=null;closeM();go('prof');
+  }catch(e){b.disabled=false;m.style.color='var(--er)';m.textContent=/course_registration/.test(e.message||'')?'The course registration tables are not set up yet. Run course_registration_setup.sql in Supabase first.':(e.message||'Could not save.')}
 };
 
-async function cgList(){
-  const o=$('#cgl');if(!o)return;
-  const REG=await CGP.load(me.reg),C=window.CRS||{};
-  if(!REG.length){o.innerHTML='Nothing saved yet. Until you upload one, all your results count.';return}
-  const G={};REG.forEach(r=>{const k=r.session+'|'+r.semester;(G[k]=G[k]||[]).push(r)});
-  o.innerHTML=Object.keys(G).sort().reverse().map(k=>{
-    const[ses,sem]=k.split('|'),rows=G[k].sort((a,b)=>a.course_code.localeCompare(b.course_code));
-    return`<div class="row"><div><b>${H(ses)} · ${H(sem)} semester</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${rows.map(r=>`<span class="tag">${H(r.course_code)}${(C[r.course_code]||{}).credit_units!=null?' · '+C[r.course_code].credit_units+'u':''} <a href="#" style="text-decoration:none" aria-label="Remove ${H(r.course_code)}" onclick="event.preventDefault();cgDel('${H(r.course_code)}','${H(ses)}')">✕</a></span>`).join('')}</div></div><button class="s d" onclick="cgDelSet('${H(ses)}','${H(sem)}')">Remove all</button></div>`;
-  }).join('');
-}
-window.cgDel=async function(code,ses){
-  try{ok(await db.from('course_registrations').delete().eq('reg_num',me.reg).eq('course_code',code).eq('session',ses));go('res')}catch(e){alert(e.message)}
-};
-window.cgDelSet=async function(ses,sem){
-  if(!confirm('Remove your '+ses+' '+sem+' semester course registration? Your CGPA will count those results again if you have no other registration for that session.'))return;
-  try{ok(await db.from('course_registrations').delete().eq('reg_num',me.reg).eq('session',ses).eq('semester',sem));go('res')}catch(e){alert(e.message)}
+window.cgRemove=async function(ses,sem){
+  if(!confirm('Remove your '+ses+' '+(sem=='First'?'1st':'2nd')+' semester course registration? The PDF and its courses will be deleted. Your CGPA then counts all results of that session again if you have no other registration for it.'))return;
+  try{
+    const f=(await loadFiles(me.reg)).find(x=>x.session==ses&&x.semester==sem);
+    ok(await db.from('course_registrations').delete().eq('reg_num',me.reg).eq('session',ses).eq('semester',sem));
+    if(f){
+      try{ok(await db.from('course_registration_files').delete().eq('id',f.id))}catch(e){}
+      if(f.file_path){try{await db.storage.from('materials').remove([f.file_path])}catch(e){}}
+    }
+    go('prof');
+  }catch(e){say(e.message,1)}
 };
 })();
 </script>
