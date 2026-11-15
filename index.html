@@ -759,9 +759,9 @@ function transcript(R,C){
   if(!R.length)return'<div class="c"><h3>Results</h3><span class="mu">No results have been uploaded yet.</span></div>';
   const reg=R[0].reg_num,calc=rows=>CGP.calc(rows,C,reg),all=calc(R),G={},att=CGP.attemptOf(R);window.CGTR={R,C,reg};
   R.forEach(r=>{const k=r.session+'|'+(r.semester=='First'?1:2);(G[k]=G[k]||[]).push(r)});
-  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · every attempt counts, so a failed course stays in your CGPA when you retake it${all.skipped?` · ${all.skipped} result${all.skipped==1?'':'s'} left out (not in your course registration)`:''}</div></div>`+CGP.awaiting(R,C,reg)+CGP.retaken(R,C)+Object.keys(G).sort().map(k=>{
+  return`<div class="c"><h3>Cumulative GPA (CGPA)</h3><div class="big">${all.g.toFixed(2)}</div><div class="mu" style="text-align:center">out of 5.00 · ${all.u} credit units counted · every attempt counts, so a failed course stays in your CGPA when you retake it${all.skipped?` · ${all.skipped} result${all.skipped==1?'':'s'} left out (not in your course registration)`:''}</div></div>`+CGP.awaiting(R,C,reg)+Object.keys(G).sort().map(k=>{
     const rows=G[k].slice().sort((a,b)=>a.course_code.localeCompare(b.course_code)),t=calc(rows),[ses,sm]=k.split('|');
-    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0],nc=!CGP.counted(r,reg);return`<tr${nc?' style="opacity:.55"':''}><td>${H(r.course_code)}${r.result_type=='CARRYOVER'?' <span class="tag">carryover</span>':''}${att(r)>1?` <span class="tag">${CGP.ord(att(r))} attempt</span>`:''}${nc?' <span class="tag er">not registered</span>':''}</td><td>${H(c.title||'—')}</td><td>${CGP.units(r,C,reg)??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
+    return`<div class="c"><h3>${H(ses)} · ${sm==1?'First':'Second'} semester</h3><div class="ov"><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th></tr>${rows.map(r=>{const c=C[r.course_code]||{},g=grade(+r.score)[0],nc=!CGP.counted(r,reg);return`<tr${nc?' style="opacity:.55"':''}><td>${H(r.course_code)}${nc?' <span class="tag er">not registered</span>':''}</td><td>${H(c.title||'—')}</td><td>${CGP.units(r,C,reg)??'—'}</td><td>${r.score}</td><td><span class="tag ${g=='F'?'er':'ok'}">${g}</span></td></tr>`}).join('')}</table></div><p class="mu" style="margin:10px 0 0">Semester GPA <b style="color:var(--tx)">${t.g.toFixed(2)}</b> · ${t.u} units</p></div>`}).join('');
 }
 const LJ={};
 function loadJs(u){return LJ[u]||(LJ[u]=new Promise((res,rej)=>{const e=document.createElement('script');e.src=u;e.onload=res;e.onerror=()=>{delete LJ[u];rej(new Error('Could not load a helper library. Check your internet connection.'))};document.head.appendChild(e)}))}
@@ -864,28 +864,27 @@ async function saveRes(){
   const x=$('#rx'),sv=id=>{const e=$(id);return e?e.value:null},U=(window.RES_ROWS||[]).map(r=>({...r,session:r.session||sv('#rs'),semester:r.semester||sv('#rm'),result_type:r.result_type||sv('#rtp')||'REGULAR'}));
   if(!U.length)return;x.textContent='Saving…';
   try{
-    // the same student + course + session + type already saved with another score? ask before updating it
-    try{
-      const regs=[...new Set(U.map(r=>r.reg_num))],ses=[...new Set(U.map(r=>r.session))],ty=[...new Set(U.map(r=>r.result_type))],old=new Map();
-      for(let i=0;i<regs.length;i+=150)ok(await db.from('student_results').select('reg_num,course_code,session,result_type,score').in('reg_num',regs.slice(i,i+150)).in('session',ses).in('result_type',ty).range(0,9999)).forEach(o=>old.set([o.reg_num,o.course_code,o.session,o.result_type].join('|'),+o.score));
-      const diff=U.filter(r=>{const o=old.get([r.reg_num,r.course_code,r.session,r.result_type].join('|'));return o!==undefined&&o!==+r.score}).length;
-      if(diff&&!confirm(diff+' result'+(diff==1?' is':'s are')+' already saved for this session and type with a different score. Saving will update '+(diff==1?'it':'them')+'. Earlier and later attempts of those courses stay as they are.\n\nIf this is a new attempt (another carryover), cancel and check the session on the sheet.\n\nContinue?')){x.textContent='Not saved.';return}
-    }catch(e){}
-    for(let i=0;i<U.length;i+=300)ok(await db.from('student_results').upsert(U.slice(i,i+300),{onConflict:'reg_num,course_code,session,result_type'}));
+    const regs=[...new Set(U.map(r=>r.reg_num))],ses=[...new Set(U.map(r=>r.session))];
+    // Every result is added as its own row, so a failed course and its carryover both stay.
+    // Only a row that is already saved with the same score (the same sheet uploaded twice) is skipped.
+    const have=new Set();
+    try{for(let i=0;i<regs.length;i+=150)ok(await db.from('student_results').select('reg_num,course_code,session,semester,score').in('reg_num',regs.slice(i,i+150)).in('session',ses).range(0,9999)).forEach(o=>have.add([o.reg_num,o.course_code,o.session,o.semester,+o.score].join('|')))}catch(e){}
+    const add=U.filter(r=>!have.has([r.reg_num,r.course_code,r.session,r.semester,+r.score].join('|'))),skipped=U.length-add.length;
+    for(let i=0;i<add.length;i+=300)ok(await db.from('student_results').insert(add.slice(i,i+300)));
     const G=[...new Set(U.map(r=>r.session+' '+r.semester+' semester'))];
-    // check the saved results against each student's course registration
+    // check the results against each student's course registration
     let note='';
     try{
-      const regs=[...new Set(U.map(r=>r.reg_num))],ses=[...new Set(U.map(r=>r.session))],REG=[];
+      const REG=[];
       for(let i=0;i<regs.length;i+=150)REG.push(...ok(await db.from('course_registrations').select('reg_num,course_code,session').in('reg_num',regs.slice(i,i+150)).in('session',ses).range(0,9999)));
       const has=new Set(REG.map(r=>r.reg_num+'|'+r.session)),got=new Set(REG.map(r=>r.reg_num+'|'+r.session+'|'+r.course_code));
       const withReg=new Set(U.filter(r=>has.has(r.reg_num+'|'+r.session)).map(r=>r.reg_num)),off=U.filter(r=>has.has(r.reg_num+'|'+r.session)&&!got.has(r.reg_num+'|'+r.session+'|'+r.course_code)).length;
       note=`<div class="mu" style="margin-top:6px">${withReg.size} of ${regs.length} students have a course registration for this session. ${off?`<b>${off} result${off==1?' is':'s are'}</b> for courses those students did not register: saved, but not counted in their CGPA. `:'Every result matches a registered course. '}${regs.length-withReg.size?`The other ${regs.length-withReg.size} have none uploaded, so all their results count.`:''}</div>`;
     }catch(e){}
-    x.innerHTML=`<span style="color:var(--gr)">Saved ${U.length} results (${G.map(H).join(', ')}).</span>${note}`;
+    x.innerHTML=`<span style="color:var(--gr)">Added ${add.length} result${add.length==1?'':'s'} (${G.map(H).join(', ')}).</span>${skipped?`<div class="mu" style="margin-top:6px">${skipped} already saved with the same score ${skipped==1?'was':'were'} skipped.</div>`:''}${note}`;
     notify([{target_role:'STUDENT',title:'Results uploaded',message:`${G.join(', ')} results are available.`,link_url:'/results'}]);
     loadSum();
-  }catch(e){x.textContent=/ON CONFLICT|unique or exclusion/i.test(e.message||'')?'The results table still treats a carryover as the same result as the original. Run results_keep_all_attempts.sql in Supabase, then save again.':e.message}
+  }catch(e){x.textContent=/duplicate key|unique/i.test(e.message||'')?'The results table still blocks a second result for the same course. Run results_allow_duplicates.sql in Supabase, then save again.':e.message}
 }
 async function loadSum(){
   const o=$('#rsm');if(!o)return;
@@ -1656,20 +1655,21 @@ window.lkRes=async function(){
   }catch(e){}
 };
 
+const rowKey=r=>r.id!=null?{id:r.id}:{reg_num:r.reg_num,course_code:r.course_code,session:r.session,semester:r.semester,result_type:r.result_type||'REGULAR',score:r.score};
 window.editR=async function(i){
   const r=window.MGR[i],s=parseFloat($('#ms'+i).value);
   if(!(s>=0&&s<=100)){alert('Score must be between 0 and 100.');return}
   try{
-    chg(ok(await db.from('student_results').update({score:s}).eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).eq('result_type',r.result_type||'REGULAR').select('reg_num')));
+    chg(ok(await db.from('student_results').update({score:s}).match(rowKey(r)).select('reg_num')));
     await lkRes();
   }catch(e){alert(e.message)}
 };
 
 window.delR=async function(i){
   const r=window.MGR[i];
-  if(!confirm('Delete '+r.course_code+' ('+r.session+(r.result_type=='CARRYOVER'?', carryover':'')+') for '+r.reg_num+'?'))return;
+  if(!confirm('Delete '+r.course_code+' ('+r.session+', score '+r.score+') for '+r.reg_num+'? Other results of this course stay.'))return;
   try{
-    chg(ok(await db.from('student_results').delete().eq('reg_num',r.reg_num).eq('course_code',r.course_code).eq('session',r.session).eq('result_type',r.result_type||'REGULAR').select('reg_num')));
+    chg(ok(await db.from('student_results').delete().match(rowKey(r)).select('reg_num')));
     await lkRes();
   }catch(e){alert(e.message)}
 };
@@ -2897,7 +2897,7 @@ window.CGP={
       const tr=rows.map(r=>{
         const c=C[r.course_code]||{},n=CGP.units(r,C,reg),g=grade(+r.score),on=CGP.counted(r,reg),pt=n!=null?n*g[1]:null;
         if(on&&n!=null){u+=n;p+=pt}
-        return`<tr${on?'':' class="x"'}><td>${H(r.course_code)}${(()=>{const l=[r.result_type=='CARRYOVER'?'carryover':'',att(r)>1?CGP.ord(att(r))+' attempt':'',on?'':'not registered, not counted'].filter(Boolean).join(', ');return l?' ('+l+')':''})()}</td><td>${H(c.title||'')}</td><td>${n??''}</td><td>${r.score}</td><td>${g[0]}</td><td>${pt??''}</td></tr>`;
+        return`<tr${on?'':' class="x"'}><td>${H(r.course_code)}${on?'':' (not registered, not counted)'}</td><td>${H(c.title||'')}</td><td>${n??''}</td><td>${r.score}</td><td>${g[0]}</td><td>${pt??''}</td></tr>`;
       }).join('');
       return`<h3>${H(ses)} session · ${sm==1?'First':'Second'} semester</h3><table><tr><th>Course</th><th>Title</th><th>Units</th><th>Score</th><th>Grade</th><th>Points</th></tr>${tr}</table><p class="s">Units ${u} · Total points ${p} · GPA ${u?(p/u).toFixed(2):'0.00'}</p>`;
     }).join('');
