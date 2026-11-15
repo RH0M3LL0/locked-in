@@ -877,8 +877,8 @@ async function saveRes(){
     // Every result is added as its own row, so a failed course and its carryover both stay.
     // Only a row that is already saved with the same score (the same sheet uploaded twice) is skipped.
     const have=new Set();
-    try{for(let i=0;i<regs.length;i+=150)ok(await db.from('student_results').select('reg_num,course_code,session,semester,score').in('reg_num',regs.slice(i,i+150)).in('session',ses).range(0,9999)).forEach(o=>have.add([o.reg_num,o.course_code,o.session,o.semester,+o.score].join('|')))}catch(e){}
-    const add=U.filter(r=>!have.has([r.reg_num,r.course_code,r.session,r.semester,+r.score].join('|'))),skipped=U.length-add.length;
+    try{for(let i=0;i<regs.length;i+=150)ok(await db.from('student_results').select('reg_num,course_code,session,semester,score,result_type').in('reg_num',regs.slice(i,i+150)).in('session',ses).range(0,9999)).forEach(o=>have.add([o.reg_num,o.course_code,o.session,o.semester,+o.score,o.result_type||'REGULAR'].join('|')))}catch(e){}
+    const add=U.filter(r=>!have.has([r.reg_num,r.course_code,r.session,r.semester,+r.score,r.result_type||'REGULAR'].join('|'))),skipped=U.length-add.length;
     for(let i=0;i<add.length;i+=300)ok(await db.from('student_results').insert(add.slice(i,i+300)));
     const G=[...new Set(U.map(r=>r.session+' '+r.semester+' semester'))];
     // check the results against each student's course registration
@@ -1303,7 +1303,7 @@ async function tkFacts(p){
   const R=ok(await db.from('student_results').select('course_code,session,semester,score,result_type').eq('reg_num',p.reg));
   await CGP.load(p.reg);
   const st=x=>x.session+(x.result_type=='CARRYOVER'?'1':'0'),best={};
-  R.forEach(r=>{best[r.course_code+'|'+r.session]=r});
+  R.forEach((r,i)=>{best[r.course_code+'|'+r.session+'|'+st(r)+'|'+i]=r});
   const cx=CGP.calc(R,C,p.reg);let u=cx.u,pts=cx.g*cx.u;
   const have=new Set(R.map(r=>r.course_code));
   const lvl=Object.values(C).filter(c=>c.level!=null&&p.level!=null&&String(c.level)===String(p.level)&&!have.has(c.code)).slice(0,12);
@@ -2889,7 +2889,13 @@ window.CGP={
     rest.forEach(r=>{
       if(!regSes.has(r.session)){place.set(r,{session:r.session,semester:r.semester,fallback:true});return}
       const g=(byC[r.course_code]||[]).find(x=>!taken.has(x));
-      if(g){place.set(r,g);taken.add(g)}else excluded.push(r);
+      if(g){place.set(r,g);taken.add(g)}
+      else{
+        // no unused registration left: the course was registered once (or fewer times than attempts),
+        // so this attempt tallies with that course's latest registration instead of being dropped
+        const all=byC[r.course_code]||[];
+        if(all.length)place.set(r,all[all.length-1]);else excluded.push(r);
+      }
     });
     defer.forEach(([r,g])=>{const h=(byC[r.course_code]||[]).find(x=>!taken.has(x));if(h){place.set(r,h);taken.add(h)}else place.set(r,g)});
     return{place,excluded,order};
