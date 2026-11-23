@@ -502,7 +502,7 @@ async function offlineFetch(input,init){
 }
 // when the connection returns, only refresh a page that was showing old data or an error
 async function refreshView(){try{window.OFFSTALE=false;window.OFFAT=Infinity;await V[tab]();window.LASTERR=false;net(window.OFFSTALE?'off':'')}catch(e){}}
-const db=supabase.createClient(CFG.URL,CFG.KEY,{global:{fetch:offlineFetch}});
+const db=supabase.createClient(CFG.URL,CFG.KEY,{global:{fetch:offlineFetch},auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
 const $=s=>document.querySelector(s),H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fd=d=>d?new Date(d).toLocaleString([],{dateStyle:'medium',timeStyle:'short'}):'';
 const TB={STUDENT:'students',LECTURER:'lecturers',ADMIN:'admins'},REG=/^\d{4}\/\d{6}$/,RN={STUDENT:'Student',LECTURER:'Lecturer',ADMIN:'Admin'};
 const NAV={STUDENT:['home','dir','mat','exam','res','cal','tk','about','nf'],LECTURER:['home','dir','mat','exam','res','cal','about','nf'],ADMIN:['home','dir','mat','cal','tk','adm','about','nf']};
@@ -559,7 +559,7 @@ function landingView(){
   const after=['Your CGPA and your rank in your level','Course PDFs with AI-written summaries','Timed tests from your lecturers and AI drills','Calendar reminders a day before and when an event starts','Help from the AI assistant, then a ticket if you still need staff','A prompt to choose your own password if you are still on the default one'];
   const faq=[['Which account do I choose?','Choose Student if you are a student, Lecturer if you teach, and Admin if the department made you an administrator. Lecturers and admins need the sign-up code from the department.'],
              ['What does my registration number look like?','Four digits, a slash and six digits, for example 2023/259021.'],
-             ['I forgot my password. What now?','Tap "Forgot password?" on the sign-in page. A 6-digit code is emailed to the email on your account and expires in 10 minutes.'],
+             ['I forgot my password. What now?','Tap "Forgot password?" on the sign-in page. A reset link is emailed to the email on your account. Open it to choose a new password.'],
              ['Can I use it on my phone?','Yes. It works on phones, tablets and laptops, and you can install it from your browser with "Install app".'],
              ['Where do I find out more?','Open the About page for what each part of the portal does.']];
   return`<div class="ln">${lnTop()}
@@ -573,7 +573,7 @@ function landingView(){
 <section class="ln-sec" aria-labelledby="how-h"><h2 id="how-h">Getting started</h2>
 <p class="ln-lead">Three quick steps from sign-up to your first results. It takes about a minute.</p>
 <ol class="ln-steps ln-flow"><li><b>Create your account.</b><span>Students use their registration number. Lecturers and admins use their email and the sign-up code from the department.</span></li>
-<li><b>Log in.</b><span>Pick your account type and sign in with the password you chose. If you forget it, a code sent to your email resets it.</span></li>
+<li><b>Log in.</b><span>Pick your account type and sign in with the password you chose. If you forget it, a link sent to your email resets it.</span></li>
 <li><b>Open your modules.</b><span>Results, materials, tests, calendar and support are one tap away.</span></li></ol></section>
 <section class="ln-sec" aria-labelledby="who-h"><h2 id="who-h">Which account do I need?</h2>
 <p class="ln-lead">Have these ready and sign-up is quick.</p>
@@ -608,24 +608,35 @@ async function login(){const role=$('#lr').value,id=$('#li').value.trim();
 try{const u=await find(role,id);if(!u||u.password_hash!==$('#lp').value)return msg('Incorrect details or password.');
 me={role,id:u.id,name:u.full_name,email:u.email,phone:u.phone_number,reg:u.reg_num||'',level:u.level||null};localStorage.setItem('sess',JSON.stringify(me));window.REPOF=undefined;tab='home';await R();if(isSt())remind()}catch(e){msg(e.message)}}
 function out(){me=null;window.REPOF=undefined;localStorage.removeItem('sess');try{OFF.clear()}catch(e){}R()}
-// Forgot password (emailed 6-digit code, handled by the reset-password edge function)
+// Forgot password (emailed reset link, handled by the reset-link edge function)
 let FPS={};
-function fp(){FPS={};modal(`<h3>Reset password</h3><p class="mu" style="margin-top:0">We will email a 6-digit code to the email on your account.</p><label>I am a</label><select id="fr" onchange="fpRole()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="fl">Registration number</label><input id="fi" autocapitalize="none" autocomplete="username"><div id="fcw"><label>Email on your account</label><input id="fe" type="email" autocapitalize="none" autocomplete="email"></div><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpGo()">Send code</button><button onclick="closeM()">Cancel</button></div>`)}
+function fp(){FPS={};modal(`<h3>Reset password</h3><p class="mu" style="margin-top:0">We will email a reset link to the email on your account.</p><label>I am a</label><select id="fr" onchange="fpRole()">${Object.keys(RN).map(r=>`<option value="${r}">${RN[r]}</option>`)}</select><label id="fl">Registration number</label><input id="fi" autocapitalize="none" autocomplete="username"><div id="fcw"><label>Email on your account</label><input id="fe" type="email" autocapitalize="none" autocomplete="email"></div><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpGo()">Send reset link</button><button onclick="closeM()">Cancel</button></div>`)}
 function fpRole(){const L=$('#fr').value=='LECTURER';$('#fl').textContent=L?'Email':'Registration number';$('#fcw').style.display=L?'none':''}
 const fpSay=(t,good)=>{const m=$('#fm');if(m){m.textContent=t;m.style.color=good?'var(--gr)':'var(--er)'}};
-async function fpCall(body){const r=await db.functions.invoke('reset-password',{body});if(r.error)throw new Error('Could not reach the server. Check your connection and try again.');if(r.data&&r.data.error)throw new Error(r.data.error);return r.data}
+async function fpCall(body){const r=await db.functions.invoke('reset-link',{body});if(r.error)throw new Error('Could not reach the server. Check your connection and try again.');if(r.data&&r.data.error)throw new Error(r.data.error);return r.data}
 async function fpGo(){const role=$('#fr')?$('#fr').value:FPS.role,L=role=='LECTURER',btn=$('#fb');
 const id=($('#fi')?$('#fi').value:FPS.id||'').trim().toLowerCase()||'',email=L?id:($('#fe')?$('#fe').value.trim().toLowerCase():FPS.email||'');
 if(L?!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id):!REG.test(id)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return fpSay(L?'Enter the email on your account.':'Enter your registration number (like 2023/259021) and the email on your account.');
 btn.disabled=true;fpSay('Sending…',1);
-try{const d=await fpCall({action:'request',role,id,email});FPS={role,id,email};fpStep2(d.message)}catch(e){fpSay(e.message);btn.disabled=false}}
-function fpStep2(m){$('#mb').innerHTML=`<h3>Enter your code</h3><p class="mu" style="margin-top:0">${H(m||'If those details match an account, a 6-digit code has been sent to its email. It expires in 10 minutes.')}</p><label for="fk">6-digit code</label><input id="fk" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"><label for="fn">New password</label><input id="fn" type="password" autocomplete="new-password"><label for="fq">Confirm new password</label><input id="fq" type="password" autocomplete="new-password" onkeydown="event.key=='Enter'&&fpDone()"><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpDone()">Change password</button><button onclick="fpGo()">Send a new code</button><button onclick="closeM()">Cancel</button></div>`}
-async function fpDone(){const code=$('#fk').value.trim(),a=$('#fn').value,b=$('#fq').value,btn=$('#fb');
-if(!/^\d{6}$/.test(code))return fpSay('Enter the 6-digit code from your email.');
+try{const d=await fpCall({action:'request',role,id,email,redirect:location.origin+location.pathname});FPS={role,id,email};fpSent(d.message)}catch(e){fpSay(e.message);btn.disabled=false}}
+function fpSent(m){$('#mb').innerHTML=`<h3>Check your email</h3><p class="mu" style="margin-top:0">${H(m||'A reset link has been sent to your email.')}</p><p class="mu">Open the link on this device, then choose your new password. If you cannot see the email, check your spam folder.</p><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" onclick="closeM()">Done</button><button id="fb" onclick="fpGo()">Send again</button></div>`}
+// Opened from the emailed link: the address looks like /?reset=ID#access_token=...&type=recovery
+let FPL=null;
+function fpLink(){try{
+const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,'')),rid=q.get('reset');
+if(!rid||!(h.get('access_token')||h.get('error_code')||h.get('error')))return;
+const tok=h.get('type')==='recovery'?h.get('access_token'):null;
+history.replaceState(null,'',location.pathname);
+if(!tok){modal(`<h3>Link expired</h3><p class="mu" style="margin-top:0">This reset link has expired or was already used. Request a new one from the sign-in page.</p><div class="r"><button class="p" onclick="closeM();fp()">Request a new link</button><button onclick="closeM()">Close</button></div>`);return}
+FPL={rid,tok};
+modal(`<h3>Choose a new password</h3><p class="mu" style="margin-top:0">Enter the password you want to use from now on.</p><label for="fn">New password</label><input id="fn" type="password" autocomplete="new-password"><label for="fq">Confirm new password</label><input id="fq" type="password" autocomplete="new-password" onkeydown="event.key=='Enter'&&fpDone()"><div id="fm" class="mu" role="status" style="min-height:20px;margin:6px 0"></div><div class="r"><button class="p" id="fb" onclick="fpDone()">Change password</button><button onclick="closeM()">Cancel</button></div>`)
+}catch(e){}}
+async function fpDone(){const a=$('#fn').value,b=$('#fq').value,btn=$('#fb');
+if(!FPL)return fpSay('This reset link is no longer valid. Request a new one.');
 if(a.length<6)return fpSay('New password must be at least 6 characters.');
 if(a!==b)return fpSay('The two passwords do not match.');
 btn.disabled=true;fpSay('Changing…',1);
-try{await fpCall({action:'confirm',role:FPS.role,id:FPS.id,code,password:a});FPS={};closeM();msg('Password changed. Sign in with your new password.','ok')}catch(e){fpSay(e.message);btn.disabled=false}}
+try{await fpCall({action:'confirm',rid:FPL.rid,token:FPL.tok,password:a});FPL=null;closeM();window.LAND=false;await R();msg('Password changed. Sign in with your new password.','ok')}catch(e){fpSay(e.message);btn.disabled=false}}
 function signup(){$('#app').innerHTML=auShell(`<h2>Create account</h2><p class="au-sub">Join the portal in a minute.</p><label>I am a</label>${auRoles('sr','sf()')}<label>Full name</label><input id="sn" autocomplete="name"><label>Email</label><input id="se" type="email" autocapitalize="none"><label>Phone number</label><input id="sh" type="tel"><div id="sx"></div><label>Password</label><input id="sp" type="password" autocomplete="new-password"><label>Confirm password</label><input id="sq" type="password" autocomplete="new-password">
 <label style="display:flex;align-items:center;color:var(--tx);margin:10px 0"><input type="checkbox" id="lt">I agree to the&nbsp;<button class="lnk" onclick="terms()">Terms & Conditions</button></label><div id="er" class="tag er" style="background:none;padding:0;border:0"></div><button class="p au-go" onclick="reg()">Create account →</button><div class="au-links"><button class="lnk" onclick="R()">Already have an account? Sign in</button></div>`);sf();window.scrollTo(0,0)}
 function sf(){const r=$('#sr').value;$('#sx').innerHTML=(r=='LECTURER'?`<label>Designation</label><input id="sd" placeholder="e.g. Senior Lecturer"><label>Office location</label><input id="so">`:`<label>Registration number (YYYY/XXXXXX)</label><input id="sg" placeholder="2023/259021">`+(r=='ADMIN'?'':`<label>Level</label><select id="sl">${[100,200,300,400,500].map(x=>`<option>${x}</option>`)}</select>`))+(r=='STUDENT'?'':`<label>Sign-up code (from the department)</label><input id="sc" autocapitalize="none">`)}
@@ -3078,7 +3089,7 @@ window.cgRemove=async function(ses,sem){
 };
 })();
 </script>
-<script>R();</script>
+<script>R();fpLink();</script>
 
 </body>
 </html>
